@@ -1,0 +1,5 @@
+__pycache__/
+personalTelemetry/
+Logs/
+logs.log
+activity.db

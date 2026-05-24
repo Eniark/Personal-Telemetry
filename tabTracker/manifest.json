@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Minimal Tab Time Tracker",
+  "version": "1.0",
+
+  "permissions": [
+    "tabs",
+    "storage",
+    "idle"
+  ],
+
+  "background": {
+    "service_worker": "tabTracker.js"
+  },
+
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
