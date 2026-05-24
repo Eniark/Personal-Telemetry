@@ -18,6 +18,18 @@ async function saveCurrentSession() {
     usage[currentTab] = (usage[currentTab] || 0) + duration;
 
     await chrome.storage.local.set({ usage });
+    fetch("127.0.0.1:8000/events", {
+        method: "POST",
+        headers: {
+            "Content-type": "application/json"
+        },
+        body: JSON.stringify({
+            "website": currentTab,
+            "duration_ms": duration,
+            "started_at": startTime,
+            "ended_at": Date.now(),
+        })
+    })
 
     console.log(
         "Saved:",
