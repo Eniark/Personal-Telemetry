@@ -1,5 +1,6 @@
 __pycache__/
-personalTelemetry/
+telemetryEnv/
 Logs/
 logs.log
 activity.db
+.env

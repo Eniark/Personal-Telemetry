@@ -1,12 +1,6 @@
 from fastapi import FastAPI
 import sqlite3
-import logging
-
-logging.basicConfig(
-    filename="Logs/logs.log",
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+from logger import logger
 
 app = FastAPI()
 
@@ -17,10 +11,9 @@ db = sqlite3.connect(
 
 @app.post("/event")
 async def event(payload: dict):
-    logging.info("Test")
     db.execute("""
         INSERT INTO events(
-            website
+            website,
             started_at,
             ended_at,
             duration_ms
@@ -34,5 +27,6 @@ async def event(payload: dict):
     ))
 
     db.commit()
+    logger.info("Insertion Successful")
 
     return {"ok": True}
