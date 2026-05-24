@@ -12,12 +12,6 @@ async function saveCurrentSession() {
 
     if (duration <= 0) return;
 
-    const result = await chrome.storage.local.get("usage");
-    const usage = result.usage || {};
-
-    usage[currentTab] = (usage[currentTab] || 0) + duration;
-
-    await chrome.storage.local.set({ usage });
     fetch("http://127.0.0.1:8000/event", {
         method: "POST",
         headers: {
