@@ -11,7 +11,7 @@ console_handler.setLevel(logging.INFO)
 
 # File logger
 timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
-log_filename = f"logs_{timestamp}.log"
+log_filename = f"{timestamp}.log"
 file_handler = logging.FileHandler(LOGS_FOLDER / log_filename)
 file_handler.setLevel(logging.INFO)
 
