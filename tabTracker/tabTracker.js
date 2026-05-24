@@ -23,14 +23,21 @@ async function saveCurrentSession() {
             "started_at": startTime,
             "ended_at": Date.now(),
         })
+    }).then(res => {
+        if (!res.ok) throw new Error("Save to DB failed.")
+
+        console.log(
+            "Saved:",
+            currentTab,
+            Math.round(duration / 1000),
+            "sec"
+        );
+    })
+    .catch(err => {
+        console.error("Save failed", err)
     })
 
-    console.log(
-        "Saved:",
-        currentTab,
-        Math.round(duration / 1000),
-        "sec"
-    );
+
 }
 
 async function switchToTab(tabId) {
