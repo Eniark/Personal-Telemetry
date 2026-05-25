@@ -4,40 +4,33 @@ let browserFocused = true;
 let userIdle = false;
 
 async function saveCurrentSession() {
-
     if (!currentTab || !startTime) return;
     if (!browserFocused || userIdle) return;
 
     const duration = Date.now() - startTime;
-
     if (duration <= 0) return;
 
-    fetch("http://127.0.0.1:8000/event", {
-        method: "POST",
-        headers: {
-            "Content-type": "application/json"
-        },
-        body: JSON.stringify({
-            "website": currentTab,
-            "duration_ms": duration,
-            "started_at": startTime,
-            "ended_at": Date.now(),
-        })
-    }).then(res => {
-        if (!res.ok) throw new Error("Save to DB failed.")
+    try {
+        const res = await fetch("http://127.0.0.1:8000/event", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                website: currentTab,
+                duration_ms: duration,
+                started_at: startTime,
+                ended_at: Date.now(),
+            })
+        });
 
-        console.log(
-            "Saved:",
-            currentTab,
-            Math.round(duration / 1000),
-            "sec"
-        );
-    })
-    .catch(err => {
-        console.error("Save failed", err)
-    })
+        if (!res.ok) throw new Error("Save failed");
 
+        console.log("Saved:", currentTab, Math.round(duration / 1000), "sec");
 
+    } catch (err) {
+        console.error("Save failed", err);
+    }
 }
 
 async function switchToTab(tabId) {
