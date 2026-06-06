@@ -76,7 +76,6 @@ chrome.windows.onFocusChanged.addListener(async (windowId) => {
         currentWindow: true
     });
     if (tabs[0].id === tabTracker.currentTab.id) {
-        console.log(tabs[0].id,  tabTracker.currentTab.id)
         tabTracker.registerTab(tabs[0].id, false);
     }
 });
@@ -93,7 +92,7 @@ async function checkBrowserFocus(){
 //
 // IDLE DETECTION
 //
-chrome.idle.setDetectionInterval(60);
+chrome.idle.setDetectionInterval(15);
 
 chrome.idle.onStateChanged.addListener(async (state) => {
     console.log("onStateChanged")
@@ -101,15 +100,8 @@ chrome.idle.onStateChanged.addListener(async (state) => {
     if (!isActive) {
         await tabTracker.saveCurrentSession();
     }
-    else { // may be enhanced to use previous tab
-            const tabs = await chrome.tabs.query({
-            active: true,
-            currentWindow: true
-        });
-
-        if (tabs.length) {
-            tabTracker.registerTab(tabs[0].id);
-        }
+    else {
+        tabTracker.registerTab(tabTracker.currentTab.id); // When user comes back from idle -> same tab will be on the screen
     }
     tabTracker.userTracked = isActive;
 });

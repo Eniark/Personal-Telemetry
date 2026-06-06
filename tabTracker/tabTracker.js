@@ -51,9 +51,8 @@ export class TabTracker {
         else {
             this.previousTab = {...this.currentTab}
             this.currentTab = new Tab(tab.id, tab.url, tab.title)
-            console.log(this.currentTab)
-            console.log(this.previousTab)
-            // currentTab = tab.url;
+            console.log("Current Tab:", this.currentTab)
+            console.log("Previos Tab:",this.previousTab)
             this.startTime = Date.now();
             this.userTracked = true;
         }
