@@ -1,11 +1,11 @@
 let currentTab = null;
 let startTime = null;
-let browserFocused = true;
-let userIdle = false;
+let userTracked = true;
+setInterval(checkBrowserFocus, 3000); // detects when browser gets unfocused
 
 async function saveCurrentSession() {
     if (!currentTab || !startTime) return;
-    if (!browserFocused || userIdle) return;
+    if (!userTracked) return;
 
     const duration = Date.now() - startTime;
     if (duration <= 0) return;
@@ -33,27 +33,32 @@ async function saveCurrentSession() {
     }
 }
 
-async function switchToTab(tabId) {
+async function switchToTab(tabId, save=true) {
+    if (save) {
+        await saveCurrentSession();
+    }
+    const tab = await chrome.tabs.get(tabId);
 
-    await saveCurrentSession();
-
-    try {
-        const tab = await chrome.tabs.get(tabId);
-
+    if (!tab) {
+        currentTab = null;
+        startTime = null;
+        userTracked = false;
+    }
+    else {
         currentTab = tab.url;
         startTime = Date.now();
-
-        console.log("Tracking:", currentTab);
-
-    } catch {
-        currentTab = null;
+        userTracked = true;
     }
+
+    console.log("Tracking:", currentTab);
+
 }
 
 //
 // TAB SWITCH
 //
 chrome.tabs.onActivated.addListener((activeInfo) => {
+    console.log("onActivated")
     switchToTab(activeInfo.tabId);
 });
 
@@ -79,33 +84,59 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
 // WINDOW FOCUS
 //
 chrome.windows.onFocusChanged.addListener(async (windowId) => {
+    if (windowId === -1) {
+        return
+    }
+    console.log(`onFocusChanged: Focus is back. ${windowId}`)
+    
+    userTracked = true
 
-    await saveCurrentSession();
+    const tabs = await chrome.tabs.query({
+        active: true,
+        currentWindow: true
+    });
 
-    browserFocused =
-        windowId !== chrome.windows.WINDOW_ID_NONE;
-
-    startTime = Date.now();
+    switchToTab(tabs[0].id, save=false);
 });
+
+async function checkBrowserFocus(){
+    let browser = await chrome.windows.getCurrent()
+    if (!browser.focused && userTracked) {
+        console.log("Browser lost focus. Saved session")
+        await saveCurrentSession();
+        userTracked = false
+    }
+}
 
 //
 // IDLE DETECTION
 //
-chrome.idle.setDetectionInterval(60);
+chrome.idle.setDetectionInterval(15);
 
 chrome.idle.onStateChanged.addListener(async (state) => {
+    console.log("onStateChanged")
+    const isActive = state === "active";
+    if (!isActive) {
+        await saveCurrentSession();
+    }
+    else {
+            const tabs = await chrome.tabs.query({
+            active: true,
+            currentWindow: true
+        });
 
-    await saveCurrentSession();
-
-    userIdle = state !== "active";
-
-    startTime = Date.now();
+        if (tabs.length) {
+            switchToTab(tabs[0].id);
+        }
+    }
+    userTracked = isActive;
 });
 
 //
 // INITIAL STARTUP
 //
 chrome.runtime.onStartup.addListener(async () => {
+    console.log("onStartup")
 
     const tabs = await chrome.tabs.query({
         active: true,
@@ -118,6 +149,7 @@ chrome.runtime.onStartup.addListener(async () => {
 });
 
 chrome.runtime.onInstalled.addListener(async () => {
+    console.log("onInstalled")
 
     const tabs = await chrome.tabs.query({
         active: true,
@@ -128,3 +160,6 @@ chrome.runtime.onInstalled.addListener(async () => {
         switchToTab(tabs[0].id);
     }
 });
+
+
+
