@@ -10,7 +10,8 @@
   ],
 
   "background": {
-    "service_worker": "tabTracker.js"
+    "service_worker": "main.js",
+    "type": "module"
   },
 
   "host_permissions": [

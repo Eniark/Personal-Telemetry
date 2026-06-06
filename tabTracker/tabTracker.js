@@ -1,165 +1,64 @@
-let currentTab = null;
-let startTime = null;
-let userTracked = true;
-setInterval(checkBrowserFocus, 3000); // detects when browser gets unfocused
+import { Tab } from "./Tab.js"
 
-async function saveCurrentSession() {
-    if (!currentTab || !startTime) return;
-    if (!userTracked) return;
-
-    const duration = Date.now() - startTime;
-    if (duration <= 0) return;
-
-    try {
-        const res = await fetch("http://127.0.0.1:8000/event", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                website: currentTab,
-                duration_ms: duration,
-                started_at: startTime,
-                ended_at: Date.now(),
-            })
-        });
-
-        if (!res.ok) throw new Error("Save failed");
-
-        console.log("Saved:", currentTab, Math.round(duration / 1000), "sec");
-
-    } catch (err) {
-        console.error("Save failed", err);
-    }
-}
-
-async function switchToTab(tabId, save=true) {
-    if (save) {
-        await saveCurrentSession();
-    }
-    const tab = await chrome.tabs.get(tabId);
-
-    if (!tab) {
-        currentTab = null;
-        startTime = null;
-        userTracked = false;
-    }
-    else {
-        currentTab = tab.url;
-        startTime = Date.now();
-        userTracked = true;
+export class TabTracker {
+    constructor() {
+        this.currentTab = this.previousTab = null;
+        this.startTime = null;
+        this.userTracked = true;
     }
 
-    console.log("Tracking:", currentTab);
+    async saveCurrentSession() {
+        if (!this.currentTab || !this.startTime) return;
+        if (!this.userTracked) return;
 
-}
+        const duration = Date.now() - this.startTime;
+        if (duration <= 0) return;
 
-//
-// TAB SWITCH
-//
-chrome.tabs.onActivated.addListener((activeInfo) => {
-    console.log("onActivated")
-    switchToTab(activeInfo.tabId);
-});
+        try {
+            const res = await fetch("http://127.0.0.1:8000/event", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    website: this.currentTab.url,
+                    duration_ms: duration,
+                    started_at: this.startTime,
+                    ended_at: Date.now(),
+                })
+            });
 
-//
-// URL CHANGE IN SAME TAB
-//
-chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+            if (!res.ok) throw new Error("Save failed");
 
-    if (changeInfo.status !== "complete") return;
+            // console.log("Saved:", this.currentTab.url, Math.round(duration / 1000), "sec");
 
-    chrome.tabs.query({
-        active: true,
-        currentWindow: true
-    }, (tabs) => {
-
-        if (tabs[0]?.id === tabId) {
-            switchToTab(tabId);
-        }
-    });
-});
-
-//
-// WINDOW FOCUS
-//
-chrome.windows.onFocusChanged.addListener(async (windowId) => {
-    if (windowId === -1) {
-        return
-    }
-    console.log(`onFocusChanged: Focus is back. ${windowId}`)
-    
-    userTracked = true
-
-    const tabs = await chrome.tabs.query({
-        active: true,
-        currentWindow: true
-    });
-
-    switchToTab(tabs[0].id, save=false);
-});
-
-async function checkBrowserFocus(){
-    let browser = await chrome.windows.getCurrent()
-    if (!browser.focused && userTracked) {
-        console.log("Browser lost focus. Saved session")
-        await saveCurrentSession();
-        userTracked = false
-    }
-}
-
-//
-// IDLE DETECTION
-//
-chrome.idle.setDetectionInterval(15);
-
-chrome.idle.onStateChanged.addListener(async (state) => {
-    console.log("onStateChanged")
-    const isActive = state === "active";
-    if (!isActive) {
-        await saveCurrentSession();
-    }
-    else {
-            const tabs = await chrome.tabs.query({
-            active: true,
-            currentWindow: true
-        });
-
-        if (tabs.length) {
-            switchToTab(tabs[0].id);
+        } catch (err) {
+            console.error("Save failed", err);
         }
     }
-    userTracked = isActive;
-});
 
-//
-// INITIAL STARTUP
-//
-chrome.runtime.onStartup.addListener(async () => {
-    console.log("onStartup")
+    async registerTab(tabId, save=true) {
+        if (save) {
+            await this.saveCurrentSession();
+        }
+        const tab = await chrome.tabs.get(tabId);
 
-    const tabs = await chrome.tabs.query({
-        active: true,
-        currentWindow: true
-    });
+        if (!tab) {
+            this.currentTab = null;
+            this.startTime = null;
+            this.userTracked = false;
+        }
+        else {
+            this.previousTab = {...this.currentTab}
+            this.currentTab = new Tab(tab.id, tab.url, tab.title)
+            console.log(this.currentTab)
+            console.log(this.previousTab)
+            // currentTab = tab.url;
+            this.startTime = Date.now();
+            this.userTracked = true;
+        }
 
-    if (tabs.length) {
-        switchToTab(tabs[0].id);
+        // console.log("Tracking:", this.currentTab.url);
+
     }
-});
-
-chrome.runtime.onInstalled.addListener(async () => {
-    console.log("onInstalled")
-
-    const tabs = await chrome.tabs.query({
-        active: true,
-        currentWindow: true
-    });
-
-    if (tabs.length) {
-        switchToTab(tabs[0].id);
-    }
-});
-
-
-
+}
