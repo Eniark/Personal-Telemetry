@@ -1,6 +1,11 @@
 from fastapi import FastAPI
-import sqlite3
 from logger import logger
+from dotenv import load_dotenv
+
+import sqlite3
+import uvicorn
+import os
+load_dotenv()
 
 app = FastAPI()
 
@@ -9,10 +14,10 @@ db = sqlite3.connect(
     check_same_thread=False
 )
 
-@app.post("/event")
+@app.post("/browser_event")
 async def event(payload: dict):
     db.execute("""
-        INSERT INTO events(
+        INSERT INTO browser_activity(
             website,
             started_at,
             ended_at,
@@ -30,3 +35,13 @@ async def event(payload: dict):
     logger.info("Insertion Successful")
 
     return {"ok": True}
+
+
+
+if __name__ == "__main__":
+    HOST = os.getenv("HOST")
+    PORT = int(os.getenv("PORT"))
+
+    uvicorn.run(
+        "main:app", host=HOST, port=PORT, reload=True
+    )

@@ -1,6 +1,7 @@
 import ctypes
 import win32con
 import pythoncom
+import requests
 
 user32 = ctypes.windll.user32
 
@@ -11,6 +12,7 @@ def callback(hook, event, hwnd, idObject, idChild, thread, time):
         user32.GetWindowTextW(hwnd, buffer, length + 1)
         if buffer.value:
             print("Event:", buffer.value)
+            request = requests.post("http://127.0.0.1:8000/event")
 
 WinEventProc = ctypes.WINFUNCTYPE(
     None, ctypes.c_void_p, ctypes.c_uint,

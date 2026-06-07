@@ -15,7 +15,7 @@ export class TabTracker {
         if (duration <= 0) return;
 
         try {
-            const res = await fetch("http://127.0.0.1:8000/event", {
+            const res = await fetch("http://127.0.0.1:8000/browser_event", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -52,7 +52,7 @@ export class TabTracker {
             this.previousTab = {...this.currentTab}
             this.currentTab = new Tab(tab.id, tab.url, tab.title)
             console.log("Current Tab:", this.currentTab)
-            console.log("Previos Tab:",this.previousTab)
+            console.log("Previous Tab:",this.previousTab)
             this.startTime = Date.now();
             this.userTracked = true;
         }
