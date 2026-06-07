@@ -10,9 +10,9 @@ console_handler:logging.StreamHandler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
 
 # File logger
-timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H")
 log_filename = f"{timestamp}.log"
-file_handler = logging.FileHandler(LOGS_FOLDER / log_filename)
+file_handler = logging.FileHandler(LOGS_FOLDER / log_filename, encoding='utf-8')
 file_handler.setLevel(logging.INFO)
 
 logFormatter: logging.Formatter = logging.Formatter(

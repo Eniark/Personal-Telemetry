@@ -22,6 +22,7 @@ export class TabTracker {
                 },
                 body: JSON.stringify({
                     website: this.currentTab.url,
+                    title: this.currentTab.title,
                     duration_ms: duration,
                     started_at: this.startTime,
                     ended_at: Date.now(),

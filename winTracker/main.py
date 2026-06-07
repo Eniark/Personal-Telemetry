@@ -12,7 +12,11 @@ def callback(hook, event, hwnd, idObject, idChild, thread, time):
         user32.GetWindowTextW(hwnd, buffer, length + 1)
         if buffer.value:
             print("Event:", buffer.value)
-            request = requests.post("http://127.0.0.1:8000/event")
+            data = {
+                "process": buffer.value
+            }
+            request = requests.post("http://127.0.0.1:8000/os_event", json=data)
+            
 
 WinEventProc = ctypes.WINFUNCTYPE(
     None, ctypes.c_void_p, ctypes.c_uint,

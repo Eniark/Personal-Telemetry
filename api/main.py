@@ -1,7 +1,8 @@
 from fastapi import FastAPI
-from logger import logger
 from dotenv import load_dotenv
-from configs import DB_PATH 
+from configs import DB_PATH
+from processing_layer.main import EventProcessor
+from logger import logger
 import sqlite3
 import uvicorn
 import os
@@ -14,26 +15,18 @@ db = sqlite3.connect(
     check_same_thread=False
 )
 
+event_processor = EventProcessor(db)
+
 @app.post("/browser_event")
 async def event(payload: dict):
-    db.execute("""
-        INSERT INTO browser_activity(
-            website,
-            started_at,
-            ended_at,
-            duration_ms
-        )
-        VALUES (?,?,?,?)
-    """, (
-        payload.get("website"),
-        payload.get("started_at"),
-        payload.get("ended_at"),
-        payload.get("duration_ms")
-    ))
+    event_processor.handle_browser_event(payload)
+    logger.info(f"Browser Event: {payload.get('title')}")
+    return {"ok": True}
 
-    db.commit()
-    logger.info("Insertion Successful")
-
+@app.post("/os_event")
+async def event(payload: dict):
+    event_processor.handle_os_event(payload)
+    logger.info(f"OS Event: {payload.get('process')}")
     return {"ok": True}
 
 
