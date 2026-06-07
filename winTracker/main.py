@@ -2,6 +2,7 @@ import ctypes
 import win32con
 import pythoncom
 import requests
+import datetime
 
 user32 = ctypes.windll.user32
 
@@ -13,7 +14,8 @@ def callback(hook, event, hwnd, idObject, idChild, thread, time):
         if buffer.value:
             print("Event:", buffer.value)
             data = {
-                "process": buffer.value
+                "process": buffer.value,
+                "started_at": datetime.datetime.now().strftime("%H:%M:%S")
             }
             request = requests.post("http://127.0.0.1:8000/os_event", json=data)
             

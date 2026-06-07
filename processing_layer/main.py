@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from logger import logger
 
 @dataclass
 class ActivityEvent:
@@ -22,12 +23,17 @@ class EventProcessor:
         self.current.website = payload.get("website")
         self.current.website_titletitle = payload.get("title")
         self.current.duration_ms = payload.get("duration_ms")
+        logger.info(f"Browser Event: {payload.get('title')} - {payload.get('started_at')}")
 
     def handle_os_event(self, payload):
-        # self.current = ActivityEvent(
-        #     payload.get()
-        # )
-        pass
+        self.current = ActivityEvent(
+            process=payload.get("process"),
+            started_at=payload.get("started_at"),
+            ended_at=None, # need to finisht this later  
+            duration_ms=None,
+
+        )
+        logger.info(f"OS Event: {payload.get('process')} - {payload.get('started_at')}")
     
 class ActivityRepository:
     def __init__(self, db):
