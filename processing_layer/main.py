@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 from logger import logger
 
+"""
+ToDo: split to Base+child classes
+tf
+"""
 @dataclass
 class ActivityEvent:
     process: str
