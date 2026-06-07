@@ -13,12 +13,13 @@ class ActivityEvent:
     started_at: int
     ended_at: int
     duration_ms: int
+    id: int = None
     website: str | None = None
     website_title: str | None = None
 
 class EventProcessor:
-    def __init__(self, db):
-        self.db = db
+    def __init__(self, repository):
+        self.repository = repository
         self.current: ActivityEvent = None
 
     def handle_browser_event(self, payload):
@@ -28,37 +29,69 @@ class EventProcessor:
         # Add the required fields for the website
         self.current.website = payload.get("website")
         self.current.website_title = payload.get("title")
-        formatted_date = datetime.datetime.fromtimestamp(
+        started_at__formatted = datetime.datetime.fromtimestamp(
             payload.get('started_at') / 1000
-        ).strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
+        ).strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION] # Converts Unix-style timetamp to human-readable format 
+        self.current.started_at = started_at__formatted 
+
+        last_id = self.repository.get_max_id("os_activity")
+        self.current.id = last_id
         
-        logger.info(f"Browser Event: {payload.get('title')} - {formatted_date}")
+        self.repository.insert_browser_activity(self.current)
+        logger.info(f"Browser Event: {payload.get('title')} - {started_at__formatted}")
 
     def handle_os_event(self, payload):
+
+        ended_at = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
+
         self.current = ActivityEvent(
             process=payload.get("process"),
             started_at=payload.get("started_at"),
-            ended_at=None, # need to finish this later  
+            ended_at=ended_at,
             duration_ms=None,
 
         )
 
-
+        self.repository.insert_os_activity(self.current)
         logger.info(f"OS Event: {payload.get('process')} - {payload.get('started_at')}")
     
 class ActivityRepository:
     def __init__(self, db):
         self.db = db
 
-    def insert(self, activity):
+    def insert_os_activity(self, activity):
         self.db.execute("""
-            INSERT INTO browser_activity
-            (website, started_at, ended_at, duration_ms)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO os_activity
+            (window, started_at)
+            VALUES (?, ?)
         """, (
-            activity.url,
-            activity.started_at,
-            activity.ended_at,
-            activity.duration_ms
+            activity.process,
+            activity.started_at
         ))
         self.db.commit()
+
+    def insert_browser_activity(self, activity): # not working properly
+        self
+        self.db.execute("""
+            INSERT INTO browser_activity
+            (website, started_at, ended_at, duration_ms, activity_id)
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            activity.website,
+            activity.started_at,
+            activity.ended_at,
+            activity.duration_ms,
+            activity.id # id of parent activity 
+            
+        ))
+
+        self.db.commit()
+    
+    def get_max_id(self, table_name):
+        allowed_tables = ["os_activity"]
+        if table_name not in allowed_tables:
+            raise ValueError("Unknown table name.")
+
+        cursor = self.db.execute(f"SELECT MAX(id) FROM {table_name}")
+        return cursor.fetchone()[0]
+        # 

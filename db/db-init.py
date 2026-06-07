@@ -1,19 +1,20 @@
 import sqlite3
+from configs import DB_PATH
 
-conn = sqlite3.connect("activity.db")
+conn = sqlite3.connect(DB_PATH)
 cursor = conn.cursor()
 
-# The main activity table
+# The table for OS processes
 cursor.execute(
     """
-    CREATE TABLE IF NOT EXISTS activity (
+    CREATE TABLE IF NOT EXISTS os_activity (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         window TEXT,
         started_at INTEGER
     )
     """)
 
-# The table for "browser" events
+# The table for browser events
 cursor.execute(
     """
     CREATE TABLE IF NOT EXISTS browser_activity (
@@ -23,7 +24,7 @@ cursor.execute(
         ended_at INTEGER,
         duration_ms INTEGER,
         activity_id INTEGER,
-        FOREIGN KEY (activity_id) REFERENCES activity(id) 
+        FOREIGN KEY (activity_id) REFERENCES os_activity(id) 
     )
     """)
 

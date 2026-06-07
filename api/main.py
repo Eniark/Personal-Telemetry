@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from dotenv import load_dotenv
 from configs import DB_PATH
-from processing_layer.main import EventProcessor
+from processing_layer.main import EventProcessor, ActivityRepository
 import sqlite3
 import uvicorn
 import os
@@ -13,7 +13,7 @@ db = sqlite3.connect(
     DB_PATH,
     check_same_thread=False
 )
-
+db = ActivityRepository(db)
 event_processor = EventProcessor(db)
 
 @app.post("/browser_event")
