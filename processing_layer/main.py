@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 from logger import logger
+import datetime
+from configs import TIMESTAMP_FORMAT, TIMESTAMP_MS_PRECISION
 
 """
 ToDo: split to Base+child classes
@@ -25,14 +27,18 @@ class EventProcessor:
 
         # Add the required fields for the website
         self.current.website = payload.get("website")
-        self.current.website_titletitle = payload.get("title")
-        logger.info(f"Browser Event: {payload.get('title')} - {payload.get('started_at')}")
+        self.current.website_title = payload.get("title")
+        formatted_date = datetime.datetime.fromtimestamp(
+            payload.get('started_at') / 1000
+        ).strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
+        
+        logger.info(f"Browser Event: {payload.get('title')} - {formatted_date}")
 
     def handle_os_event(self, payload):
         self.current = ActivityEvent(
             process=payload.get("process"),
             started_at=payload.get("started_at"),
-            ended_at=None, # need to finisht this later  
+            ended_at=None, # need to finish this later  
             duration_ms=None,
 
         )

@@ -3,6 +3,7 @@ import win32con
 import pythoncom
 import requests
 import datetime
+from configs import TIMESTAMP_FORMAT, TIMESTAMP_MS_PRECISION
 
 user32 = ctypes.windll.user32
 
@@ -15,9 +16,10 @@ def callback(hook, event, hwnd, idObject, idChild, thread, time):
             print("Event:", buffer.value)
             data = {
                 "process": buffer.value,
-                "started_at": datetime.datetime.now().strftime("%H:%M:%S")
+                "started_at": datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
             }
-            request = requests.post("http://127.0.0.1:8000/os_event", json=data)
+            print(data)
+            requests.post("http://127.0.0.1:8000/os_event", json=data)
             
 
 WinEventProc = ctypes.WINFUNCTYPE(
