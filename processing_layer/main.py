@@ -26,7 +26,6 @@ class EventProcessor:
         # Add the required fields for the website
         self.current.website = payload.get("website")
         self.current.website_titletitle = payload.get("title")
-        self.current.duration_ms = payload.get("duration_ms")
         logger.info(f"Browser Event: {payload.get('title')} - {payload.get('started_at')}")
 
     def handle_os_event(self, payload):
@@ -37,6 +36,8 @@ class EventProcessor:
             duration_ms=None,
 
         )
+
+
         logger.info(f"OS Event: {payload.get('process')} - {payload.get('started_at')}")
     
 class ActivityRepository:

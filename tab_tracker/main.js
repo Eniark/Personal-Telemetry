@@ -92,7 +92,7 @@ async function checkBrowserFocus(){
 //
 // IDLE DETECTION
 //
-chrome.idle.setDetectionInterval(15);
+chrome.idle.setDetectionInterval(60);
 
 chrome.idle.onStateChanged.addListener(async (state) => {
     console.log("onStateChanged")
