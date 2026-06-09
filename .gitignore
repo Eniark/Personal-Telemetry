@@ -4,3 +4,4 @@ Logs/
 logs.log
 activity.db
 .env
+.vscode
