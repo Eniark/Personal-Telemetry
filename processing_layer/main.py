@@ -34,9 +34,6 @@ class EventProcessor:
         ).strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION] # Converts Unix-style timetamp to human-readable format 
         self.current.started_at = started_at__formatted 
 
-        last_id = self.repository.get_max_id("os_activity")
-        self.current.id = last_id
-        
         self.repository.insert_browser_activity(self.current)
         logger.info(f"Browser Event: {payload.get('title')} - {started_at__formatted}")
 
@@ -52,7 +49,8 @@ class EventProcessor:
 
         )
 
-        self.repository.insert_os_activity(self.current)
+        last_row_id = self.repository.insert_os_activity(self.current)
+        self.current.id = last_row_id
         logger.info(f"OS Event: {payload.get('process')} - {payload.get('started_at')}")
     
 class ActivityRepository:
@@ -69,6 +67,7 @@ class ActivityRepository:
             activity.started_at
         ))
         self.db.commit()
+        return self.db.lastrowid
 
     def insert_browser_activity(self, activity): # not working properly
         self
@@ -86,12 +85,3 @@ class ActivityRepository:
         ))
 
         self.db.commit()
-    
-    def get_max_id(self, table_name):
-        allowed_tables = ["os_activity"]
-        if table_name not in allowed_tables:
-            raise ValueError("Unknown table name.")
-
-        cursor = self.db.execute(f"SELECT MAX(id) FROM {table_name}")
-        return cursor.fetchone()[0]
-        # 
