@@ -70,7 +70,14 @@ class EventProcessor:
 
         self.os_activities.append(event)
         self.os_activity_last_row_id += 1
-        if len(self.os_activities) > self.batch_size:
+        if len(self.browser_activities) > self.batch_size: # for case when user is stuck in browser
+            self.repository.insert_os_activities(self.os_activities)
+            self.os_activities = []
+
+            self.repository.insert_browser_activities(self.browser_activities)
+            self.browser_activities = []
+        
+        elif len(self.os_activities) > self.batch_size:
             self.repository.insert_os_activities(self.os_activities)
             self.os_activities = []
         logger.info(f"OS Event: {event.process} - {self.os_activity_last_row_id}")
