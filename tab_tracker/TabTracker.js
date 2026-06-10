@@ -34,7 +34,7 @@ export class TabTracker {
         }
     }
 
-    async registerTab(tabId, save=true) {
+    async registerTab(tabId) {
         
         const tab = await chrome.tabs.get(tabId);
 
@@ -52,9 +52,7 @@ export class TabTracker {
             this.userTracked = true;
         }
 
-        if (save) {
-            await this.saveCurrentSession();
-        }
+        await this.saveCurrentSession();
 
         // console.log("Tracking:", this.currentTab.url);
 

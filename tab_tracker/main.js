@@ -4,13 +4,7 @@ const tabTracker = new TabTracker()
 
 setInterval(checkBrowserFocus, 4000); // detects when browser gets unfocused
 
-
-//
-// INITIAL STARTUP
-//
 chrome.runtime.onStartup.addListener(async () => {
-    console.log("onStartup")
-
     const tabs = await chrome.tabs.query({
         active: true,
         currentWindow: true
@@ -22,8 +16,6 @@ chrome.runtime.onStartup.addListener(async () => {
 });
 
 chrome.runtime.onInstalled.addListener(async () => {
-    console.log("onInstalled")
-
     const tabs = await chrome.tabs.query({
         active: true,
         currentWindow: true
@@ -76,15 +68,14 @@ chrome.windows.onFocusChanged.addListener(async (windowId) => {
         currentWindow: true
     });
     if (tabs[0].id === tabTracker.currentTab.id) {
-        tabTracker.registerTab(tabs[0].id, false);
+        tabTracker.registerTab(tabs[0].id);
     }
 });
 
 async function checkBrowserFocus(){
     let browser = await chrome.windows.getCurrent()
     if (!browser.focused && tabTracker.userTracked) {
-        console.log("Browser lost focus. Saved session")
-        await tabTracker.saveCurrentSession();
+        console.log("Browser lost focus.")
         tabTracker.userTracked = false
     }
 }
