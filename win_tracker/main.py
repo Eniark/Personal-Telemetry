@@ -4,6 +4,26 @@ import pythoncom
 import requests
 import datetime
 from configs import TIMESTAMP_FORMAT, TIMESTAMP_MS_PRECISION
+import win32gui
+import win32process
+import psutil
+
+
+BROWSERS = {
+    "chrome.exe",
+    "msedge.exe",
+    "firefox.exe",
+    "opera.exe",
+    "brave.exe",
+    "vivaldi.exe"
+}
+
+def get_event_category(window_id):
+    _, pid = win32process.GetWindowThreadProcessId(window_id)
+    process = psutil.Process(pid)
+    if process.name().lower() in BROWSERS:
+        return 'browser'
+    return 'operating_system'
 
 user32 = ctypes.windll.user32
 
@@ -12,10 +32,12 @@ def callback(hook, event, hwnd, idObject, idChild, thread, time):
         length = user32.GetWindowTextLengthW(hwnd) # needed for C-language as C requires a fixed size memory buffer
         buffer = ctypes.create_unicode_buffer(length + 1)
         user32.GetWindowTextW(hwnd, buffer, length + 1)
+        
         if buffer.value:
-            print("Event:", buffer.value)
+            process_category = get_event_category(hwnd)
             data = {
                 "process": buffer.value,
+                "category": process_category,
                 "started_at": datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
             }
             print(data)
