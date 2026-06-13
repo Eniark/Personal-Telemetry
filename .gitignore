@@ -1,7 +1,32 @@
+# Python
 __pycache__/
+*.pyc
 telemetryEnv/
+.env
+# =======
+
+# Logs / data
 Logs/
 logs.log
 activity.db
-.env
-.vscode
+# =======
+
+# Android App builds
+android_app/app/build/
+android_app/build/
+android_app/.gradle/
+android_app/local.properties
+android_app/app/src/androidTest/
+android_app/app/src/test/
+# =======
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+# =======
+
+# Native builds
+android_app/externalNativeBuild/
+android_app/cxx/
+# =======
