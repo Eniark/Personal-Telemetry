@@ -1,5 +1,7 @@
 package com.example.personaltelemetry
 
+import android.app.usage.UsageStatsManager
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -28,7 +30,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.provider.Settings
+import android.util.Log
 import androidx.compose.ui.platform.LocalContext
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -102,11 +108,41 @@ fun BodySection() {
     }
 
 }
+
+fun startTracking(context: Context) {
+    val request = PeriodicWorkRequestBuilder<MyWorker>(
+        15, TimeUnit.MINUTES
+    ).build()
+
+    WorkManager.getInstance(context).enqueue(request)
+}
 @Composable
 fun StartTrackingButton(running: Boolean, onToggle: (Boolean) -> Unit) {
+    val context = LocalContext.current
+
+    val usageStatsManager =
+        context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+
+    val endTime = System.currentTimeMillis()
+    val startTime = endTime - 1000 * 60 * 10 // last 10 minutes
+
+    val stats = usageStatsManager.queryUsageStats(
+        UsageStatsManager.INTERVAL_DAILY,
+        startTime,
+        endTime
+    )
+
     Button(
         onClick = {
             onToggle(!running);
+
+            startTracking(context)
+
+            val recentApp = stats
+                .maxByOrNull { it.lastTimeUsed }
+
+            val packageName = recentApp?.packageName
+
         },
         modifier = Modifier
             .height(100.dp)
@@ -123,6 +159,7 @@ fun StartTrackingButton(running: Boolean, onToggle: (Boolean) -> Unit) {
 @Composable
 fun PermissionAccessButton() {
     val context = LocalContext.current
+
 
     Button(
         onClick = {
