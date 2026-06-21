@@ -21,7 +21,7 @@ interface TelemetryApi {
 
 object ApiClient {
     private val retrofit = Retrofit.Builder()
-        .baseUrl("http://192.168.0.102:8000/")
+        .baseUrl("http://192.168.0.102:8000/") // Move IP to a config file
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
