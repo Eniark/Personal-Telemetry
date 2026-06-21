@@ -1,14 +1,17 @@
-package com.example.personaltelemetry
+package com.example.personaltelemetry.app.api
 
 import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.example.personaltelemetry.app.api.ActivityEvent
-import com.example.personaltelemetry.app.api.ApiClient
 
-class MyWorker(appContext: Context, params: WorkerParameters) :
-    CoroutineWorker(appContext, params) { // Android can run this piece of code in the background asynchronously
+class TelemetryRepository {
+    suspend fun sendEvent(event: ActivityEvent) {
+        ApiClient.api.sendEvent(event)
+    }
+}
+
+class MyWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) { // Android can run this piece of code in the background asynchronously
 
     override suspend fun doWork(): Result {
         return try {
@@ -20,10 +23,10 @@ class MyWorker(appContext: Context, params: WorkerParameters) :
                 timestamp = System.currentTimeMillis()
             )
 
-            ApiClient.api.sendEvent(event)
+            TelemetryRepository().sendEvent(event)
+            Log.d("INFO", "Sent message to the API")
 
             Result.success()
-
         } catch (e: Exception) {
             Log.e("WORKER", "Failed", e)
             Result.retry()
