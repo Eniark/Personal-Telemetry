@@ -40,9 +40,9 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.personaltelemetry.app.database.ActivityEvent
-import com.example.personaltelemetry.app.processingLayer.CustomWorker
-import com.example.personaltelemetry.app.processingLayer.TelemetryRepository
-import com.example.personaltelemetry.app.processingLayer.checkAccessPermission
+import com.example.personaltelemetry.app.backgroundWorker.CustomWorker
+import com.example.personaltelemetry.app.backgroundWorker.TelemetryRepository
+import com.example.personaltelemetry.app.backgroundWorker.checkAccessPermission
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 

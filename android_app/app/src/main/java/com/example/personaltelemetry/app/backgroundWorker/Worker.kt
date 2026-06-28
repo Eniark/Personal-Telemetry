@@ -1,4 +1,4 @@
-package com.example.personaltelemetry.app.processingLayer
+package com.example.personaltelemetry.app.backgroundWorker
 
 import android.content.Context
 import android.util.Log
@@ -8,13 +8,7 @@ import android.app.AppOpsManager
 import android.app.usage.UsageStatsManager
 import android.os.Process
 import com.example.personaltelemetry.app.database.ActivityEvent
-import com.example.personaltelemetry.app.database.ApiClient
-
-class TelemetryRepository {
-    suspend fun sendEvent(event: ActivityEvent) {
-        ApiClient.api.sendEvent(event)
-    }
-}
+import com.example.personaltelemetry.app.repository.TelemetryRepository
 
 class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) { // Android can run this piece of code in the background asynchronously
 
@@ -40,10 +34,11 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
             val packageName = recentApp?.packageName
             val event = ActivityEvent(
                 packageName = packageName,
-                timestamp = System.currentTimeMillis()
+                timestamp = System.currentTimeMillis(),
+                sent = false
             )
 
-            TelemetryRepository().sendEvent(event)
+            TelemetryRepository().sendEvents(event)
             Log.d("INFO", "Sent message to the API")
 
             Result.success()
