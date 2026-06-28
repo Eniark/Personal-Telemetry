@@ -1,4 +1,4 @@
-package com.example.personaltelemetry.app.api
+package com.example.personaltelemetry.app.processingLayer
 
 import android.content.Context
 import android.util.Log
@@ -7,6 +7,8 @@ import androidx.work.WorkerParameters
 import android.app.AppOpsManager
 import android.app.usage.UsageStatsManager
 import android.os.Process
+import com.example.personaltelemetry.app.database.ActivityEvent
+import com.example.personaltelemetry.app.database.ApiClient
 
 class TelemetryRepository {
     suspend fun sendEvent(event: ActivityEvent) {
