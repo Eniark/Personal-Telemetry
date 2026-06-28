@@ -9,7 +9,8 @@ import androidx.compose.ui.graphics.Color
 val AppTypography = Typography(
     headlineLarge = TextStyle(
         fontSize = 35.sp,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.Bold,
+        color = Color.White
     ),
     bodyLarge = TextStyle(
         fontSize = 32.sp,

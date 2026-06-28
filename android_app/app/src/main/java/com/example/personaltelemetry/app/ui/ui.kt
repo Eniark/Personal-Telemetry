@@ -1,6 +1,5 @@
 package com.example.personaltelemetry.app.ui
 
-import android.R
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +28,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
@@ -46,7 +45,6 @@ import com.example.personaltelemetry.app.api.MyWorker
 import com.example.personaltelemetry.app.api.TelemetryRepository
 import com.example.personaltelemetry.app.api.checkAccessPermission
 import kotlinx.coroutines.launch
-import java.security.Permission
 import java.util.concurrent.TimeUnit
 
 @Composable
@@ -89,25 +87,31 @@ fun TelemetryApp() {
     when {
         !hasAccessPermission -> {
             statusText = "Permissions Required"
-            statusColor = Color.Yellow
+            statusColor = MaterialTheme.colorScheme.warning
             running = false
         }
         !running -> {
             statusText = "Inactive"
-            statusColor = Color.Red
+            statusColor = MaterialTheme.colorScheme.onError
             running = false
         }
         else -> {
             statusText = "Active"
-            statusColor = Color.Green
+            statusColor = MaterialTheme.colorScheme.success
             running = true
         }
     }
     Column( // Vertical layout of child elements
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Red)
-//            .height(300.dp)
+            .background(
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xFF8E94F2),
+                        Color(0xFFFA824C)
+                    )
+                )
+            )
     ) {
         HeaderSection()
         BodySection(running) {
@@ -126,8 +130,7 @@ fun HeaderSection() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp)
-            .background(Color.Yellow),
+            .height(200.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -149,7 +152,6 @@ fun BodySection(running: Boolean, onRunningChange: (Boolean) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(300.dp)
-            .background(Color.Black)
             .padding(50.dp, 50.dp, 50.dp, 0.dp),
 
 
@@ -232,6 +234,7 @@ fun StartTrackingButton(running: Boolean, onToggle: (Boolean) -> Unit) {
 
     val scope = rememberCoroutineScope()
     Button(
+
         onClick = {
             onToggle(!running);
 
