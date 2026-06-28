@@ -40,8 +40,9 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.example.personaltelemetry.app.api.ActivityEvent
-import com.example.personaltelemetry.app.api.MyWorker
+import com.example.personaltelemetry.app.api.CustomWorker
 import com.example.personaltelemetry.app.api.TelemetryRepository
 import com.example.personaltelemetry.app.api.checkAccessPermission
 import kotlinx.coroutines.launch
@@ -63,7 +64,7 @@ fun TelemetryApp() {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    var hasAccessPermission by remember { // Allws the UI to track this variable and adjust itself
+    var hasAccessPermission by remember { // Allows the UI to track this variable and adjust itself
         mutableStateOf(checkAccessPermission(context))
     }
 
@@ -88,17 +89,14 @@ fun TelemetryApp() {
         !hasAccessPermission -> {
             statusText = "Permissions Required"
             statusColor = MaterialTheme.colorScheme.warning
-            running = false
         }
         !running -> {
             statusText = "Inactive"
             statusColor = MaterialTheme.colorScheme.onError
-            running = false
         }
         else -> {
             statusText = "Active"
             statusColor = MaterialTheme.colorScheme.success
-            running = true
         }
     }
     Column( // Vertical layout of child elements
@@ -114,7 +112,7 @@ fun TelemetryApp() {
             )
     ) {
         HeaderSection()
-        BodySection(running) {
+        BodySection(running, hasAccessPermission) {
             if (hasAccessPermission) {
                 running = it
             }
@@ -146,22 +144,19 @@ fun HeaderSection() {
 }
 
 @Composable
-fun BodySection(running: Boolean, onRunningChange: (Boolean) -> Unit) {
+fun BodySection(running: Boolean, hasAccessPermission: Boolean, onRunningChange: (Boolean) -> Unit) {
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .height(300.dp)
             .padding(50.dp, 50.dp, 50.dp, 0.dp),
-
-
-
         verticalArrangement = Arrangement.spacedBy(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
 
     ) {
         PermissionAccessButton()
-        StartTrackingButton(running) {
+        StartTrackingButton(running, hasAccessPermission) {
             onRunningChange(it)
         }
 
@@ -171,8 +166,8 @@ fun BodySection(running: Boolean, onRunningChange: (Boolean) -> Unit) {
 }
 
 fun startTracking(context: Context) {
-    val request = PeriodicWorkRequestBuilder<MyWorker>(
-        15, TimeUnit.MINUTES
+    val request = PeriodicWorkRequestBuilder<CustomWorker>(
+        CustomWorker.TRACKING_WINDOW_MINUTES, TimeUnit.MINUTES
     ).build()
 
     WorkManager.getInstance(context).enqueue(request)
@@ -229,40 +224,17 @@ fun TableRow(
     }
 }
 @Composable
-fun StartTrackingButton(running: Boolean, onToggle: (Boolean) -> Unit) {
+fun StartTrackingButton(running: Boolean, hasAccessPermission: Boolean, onToggle: (Boolean) -> Unit) {
     val context = LocalContext.current
 
-    val scope = rememberCoroutineScope()
     Button(
 
         onClick = {
-            onToggle(!running);
+            val newValue = !running;
+            onToggle(newValue);
 
-            if (running) {
-                val usageStatsManager =
-                    context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-
-                val endTime = System.currentTimeMillis()
-                val startTime = endTime - 1000 * 60 * 10 // last 10 minutes
-
-                val stats = usageStatsManager.queryUsageStats(
-                    UsageStatsManager.INTERVAL_DAILY,
-                    startTime,
-                    endTime
-                )
-
-                val recentApp = stats
-                    .maxByOrNull { it.lastTimeUsed }
-
-                val packageName = recentApp?.packageName
-                val event = ActivityEvent(
-                    packageName = packageName,
-                    timestamp = System.currentTimeMillis()
-                )
-                scope.launch {
-                    TelemetryRepository().sendEvent(event)
-                }
-//            startTracking(context)
+            if (newValue && hasAccessPermission) {
+                startTracking(context)
             }
 
 
