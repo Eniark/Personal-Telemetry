@@ -1,4 +1,5 @@
 package com.example.personaltelemetry.app.api
+import com.example.personaltelemetry.BuildConfig
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -19,9 +20,11 @@ interface TelemetryApi {
 }
 
 
+
 object ApiClient {
+   val URL: String = BuildConfig.API_BASE_URL;
     private val retrofit = Retrofit.Builder()
-        .baseUrl("http://192.168.0.102:8000/") // Move IP to a config file
+        .baseUrl(URL) // Move IP to a config file
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 

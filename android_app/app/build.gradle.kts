@@ -19,10 +19,21 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    buildFeatures {
+        buildConfig = true
+        compose = true
+    }
+
     buildTypes {
         release {
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                "\"http://192.168.0.102:8000/\""
+            )
             optimization {
                 enable = false
+
             }
         }
     }
@@ -30,9 +41,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    buildFeatures {
-        compose = true
-    }
+
 }
 
 dependencies {
