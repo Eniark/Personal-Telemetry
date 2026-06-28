@@ -3,6 +3,7 @@ package com.example.personaltelemetry
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import com.example.personaltelemetry.app.ui.AppTheme
 import com.example.personaltelemetry.app.ui.TelemetryApp
 
 class Main: ComponentActivity() {
@@ -10,7 +11,9 @@ class Main: ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            TelemetryApp()
+            AppTheme {
+                TelemetryApp()
+            }
         }
     }
 }

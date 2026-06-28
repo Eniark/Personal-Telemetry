@@ -4,7 +4,8 @@ import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-
+import android.app.AppOpsManager
+import android.os.Process
 class TelemetryRepository {
     suspend fun sendEvent(event: ActivityEvent) {
         ApiClient.api.sendEvent(event)
@@ -32,4 +33,19 @@ class MyWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(
             Result.retry()
         }
     }
+}
+
+
+fun hasUsageAccessPermission(context: Context): Boolean {
+    val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+
+    val mode = appOps.checkOpNoThrow(
+        AppOpsManager.OPSTR_GET_USAGE_STATS,
+        Process.myUid(),
+        context.packageName
+    )
+
+    Log.d("PERMISSIONS STATUS", mode.toString())
+
+    return mode == AppOpsManager.MODE_ALLOWED
 }

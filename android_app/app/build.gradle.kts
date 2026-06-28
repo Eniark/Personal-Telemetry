@@ -25,12 +25,14 @@ android {
     }
 
     buildTypes {
-        release {
+        debug {
             buildConfigField(
                 "String",
                 "API_BASE_URL",
                 "\"http://192.168.0.102:8000/\""
             )
+        }
+        release {
             optimization {
                 enable = false
 
@@ -50,6 +52,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
+    implementation(libs.androidx.compose.ui.text)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

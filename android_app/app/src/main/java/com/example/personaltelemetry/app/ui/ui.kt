@@ -7,6 +7,7 @@ import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -33,8 +36,19 @@ import androidx.work.WorkManager
 import com.example.personaltelemetry.app.api.ActivityEvent
 import com.example.personaltelemetry.app.api.MyWorker
 import com.example.personaltelemetry.app.api.TelemetryRepository
+import com.example.personaltelemetry.app.api.hasUsageAccessPermission
 import kotlinx.coroutines.launch
+import java.security.Permission
 import java.util.concurrent.TimeUnit
+
+@Composable
+fun AppTheme(content: @Composable () -> Unit) {
+    MaterialTheme(
+        colorScheme = LightColorScheme,
+        typography = AppTypography,
+        content = content
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,8 +80,7 @@ fun HeaderSection() {
                 top = 70.dp
             ),
             text = "Personal Telemetry",
-            fontSize = 35.sp,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.headlineLarge,
             letterSpacing = 1.8.sp,
         )
     }
@@ -79,7 +92,7 @@ fun BodySection() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Green),
+            .background(Color.Black),
 
         verticalArrangement = Arrangement.spacedBy(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -89,10 +102,10 @@ fun BodySection() {
         StartTrackingButton(running) {
             running = it
         }
-
+        statusRow()
         Text(
             text = "Sent events: <Amount>",
-            fontSize = 32.sp
+            style = MaterialTheme.typography.bodyLarge,
         )
 
     }
@@ -106,6 +119,25 @@ fun startTracking(context: Context) {
 
     WorkManager.getInstance(context).enqueue(request)
 
+}
+
+@Composable
+fun statusRow() {
+    val context = LocalContext.current
+
+    Row (
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
+        Text(
+            text = "Status",
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        Text(
+            text = if (hasUsageAccessPermission(context)) "Status" else "test",
+            style = MaterialTheme.typography.bodyLarge,
+        )
+    }
 }
 @Composable
 fun StartTrackingButton(running: Boolean, onToggle: (Boolean) -> Unit) {
@@ -157,6 +189,7 @@ fun StartTrackingButton(running: Boolean, onToggle: (Boolean) -> Unit) {
     }
 }
 
+
 @Composable
 fun PermissionAccessButton() {
     val context = LocalContext.current
@@ -167,6 +200,7 @@ fun PermissionAccessButton() {
             val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
             context.startActivity(intent)
         },
+        shape = RectangleShape,
         modifier = Modifier
             .padding(
                 top = 50.dp
