@@ -16,7 +16,7 @@ val AppTypography = Typography(
         color = Color.White
     ),
     bodySmall = TextStyle(
-        fontSize = 14.sp,
+        fontSize = 20.sp,
         color = Color.White
     )
 )

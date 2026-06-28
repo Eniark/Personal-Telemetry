@@ -36,7 +36,7 @@ class MyWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(
 }
 
 
-fun hasUsageAccessPermission(context: Context): Boolean {
+fun checkAccessPermission(context: Context): Boolean {
     val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
 
     val mode = appOps.checkOpNoThrow(
