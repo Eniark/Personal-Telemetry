@@ -4,6 +4,7 @@ import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -41,10 +43,15 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.personaltelemetry.app.database.ActivityEvent
 import com.example.personaltelemetry.app.backgroundWorker.CustomWorker
-import com.example.personaltelemetry.app.backgroundWorker.TelemetryRepository
 import com.example.personaltelemetry.app.backgroundWorker.checkAccessPermission
+import com.example.personaltelemetry.app.database.ActivityEventDao
+import com.example.personaltelemetry.app.database.AppDatabase.Companion.getDatabase
+import com.example.personaltelemetry.app.repository.ApiClient
+import com.example.personaltelemetry.app.repository.TelemetryRepository
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
+import kotlin.collections.plusAssign
+import java.time.Instant
 
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {
@@ -64,6 +71,13 @@ fun TelemetryApp() {
 
     var hasAccessPermission by remember { // Allows the UI to track this variable and adjust itself
         mutableStateOf(checkAccessPermission(context))
+    }
+
+    var numberOfSentEvents by remember {
+        mutableIntStateOf(0)
+    }
+    var numberOfStoredEvents by remember {
+        mutableIntStateOf(0)
     }
 
     DisposableEffect(lifecycleOwner) { // Tracks when app becomes active again
@@ -88,10 +102,12 @@ fun TelemetryApp() {
             statusText = "Permissions Required"
             statusColor = MaterialTheme.colorScheme.warning
         }
+
         !running -> {
             statusText = "Inactive"
             statusColor = MaterialTheme.colorScheme.onError
         }
+
         else -> {
             statusText = "Active"
             statusColor = MaterialTheme.colorScheme.success
@@ -110,13 +126,21 @@ fun TelemetryApp() {
             )
     ) {
         HeaderSection()
-        BodySection(running, hasAccessPermission) {
-            if (hasAccessPermission) {
-                running = it
-            }
-        }
-        StatusSection(statusText, statusColor)
-
+        BodySection(
+            running,
+            hasAccessPermission,
+            onRunningChange = {
+                if (hasAccessPermission) {
+                    running = it
+                }
+            },
+            onNewEventsStored = {
+                numberOfStoredEvents += it
+            },
+            onNewEventsSent = {
+                numberOfSentEvents += it
+            })
+        StatusSection(statusText, statusColor, numberOfSentEvents, numberOfStoredEvents)
     }
 }
 
@@ -142,7 +166,13 @@ fun HeaderSection() {
 }
 
 @Composable
-fun BodySection(running: Boolean, hasAccessPermission: Boolean, onRunningChange: (Boolean) -> Unit) {
+fun BodySection(
+        running: Boolean,
+        hasAccessPermission: Boolean,
+        onRunningChange: (Boolean) -> Unit,
+        onNewEventsStored: (Int) -> Unit,
+        onNewEventsSent: (Int) -> Unit,) {
+
 
     Column(
         modifier = Modifier
@@ -154,9 +184,13 @@ fun BodySection(running: Boolean, hasAccessPermission: Boolean, onRunningChange:
 
     ) {
         PermissionAccessButton()
-        StartTrackingButton(running, hasAccessPermission) {
-            onRunningChange(it)
-        }
+        StartTrackingButton(running,
+            hasAccessPermission,
+            onToggle = {
+                onRunningChange(it)
+            },
+            onNewEventsStored,
+            onNewEventsSent)
 
 
     }
@@ -175,11 +209,10 @@ fun startTracking(context: Context) {
 @Composable
 fun StatusSection(
     statusText: String,
-    statusColor: Color
+    statusColor: Color,
+    numberOfSentEvents: Int,
+    numberOfStoredEvents: Int,
 ) {
-    var numberOfSentEvents = 0
-    var numberOfStoredEvents = 0
-
     Column(
         modifier = Modifier
             .padding(horizontal = 50.dp)
@@ -222,7 +255,13 @@ fun TableRow(
     }
 }
 @Composable
-fun StartTrackingButton(running: Boolean, hasAccessPermission: Boolean, onToggle: (Boolean) -> Unit) {
+fun StartTrackingButton(
+        running: Boolean,
+        hasAccessPermission: Boolean,
+        onToggle: (Boolean) -> Unit,
+        onNewEventsStored: (Int) -> Unit,
+        onNewEventsSent: (Int) -> Unit,
+        ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     Button(
@@ -239,35 +278,47 @@ fun StartTrackingButton(running: Boolean, hasAccessPermission: Boolean, onToggle
                 val endTime = System.currentTimeMillis()
                 val startTime = endTime - 1000 * 60 * CustomWorker.TRACKING_WINDOW_MINUTES // last 10 minutes
 
-                val stats = usageStatsManager.queryUsageStats(
+                var stats = usageStatsManager.queryUsageStats(
                     UsageStatsManager.INTERVAL_DAILY,
                     startTime,
                     endTime
                 )
 
-                println(stats.size)
-
-
-                stats.filter {
-                    it.lastTimeUsed > 0
-                }.forEach {
+                var events: List<ActivityEvent> = stats.filter {
+                    it.lastTimeUsed > 0 // get apps with > 0 time usage
+                }.map {
                     val pm = context.packageManager
-                    val appInfo = pm.getApplicationInfo(it.packageName, 0)
-                    val appName = pm.getApplicationLabel(appInfo).toString()
-                    println("${it.packageName}, ${appName}, ${it.lastTimeUsed}")
+                    val appName = try {
+                        val appInfo = pm.getApplicationInfo(it.packageName, 0)
+                        pm.getApplicationLabel(appInfo).toString()
+                    }
+                    catch (e: Exception) {
+                        it.packageName
+                    }
+
+                    ActivityEvent(
+                        packageName = appName,
+                        timestamp = it.lastTimeUsed,
+                        sent = false
+                    )
                 }
+                val db = getDatabase(context)
 
-                val recentApp = stats
-                    .maxByOrNull { it.lastTimeUsed }
-
-                val packageName = recentApp?.packageName
-                val event = ActivityEvent(
-                    packageName = packageName,
-                    timestamp = System.currentTimeMillis()
-                )
                 scope.launch {
-                    TelemetryRepository().sendEvent(event)
+                    TelemetryRepository(
+                        db.activityEventDao(),
+                        ApiClient.api
+                    ).saveEvents(events)
                 }
+                Log.d("Events:", events.size.toString())
+                onNewEventsStored(events.size)
+                scope.launch {
+                    var eventsStored: List<ActivityEvent> = db.activityEventDao().getPending()
+                    eventsStored.forEach {
+                        Log.d("Database", it.toString())
+                    }
+                }
+
             }
 
 

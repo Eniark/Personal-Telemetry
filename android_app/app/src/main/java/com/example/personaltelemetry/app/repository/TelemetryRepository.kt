@@ -14,8 +14,8 @@ class TelemetryRepository(
     private val api: TelemetryApi
 ) {
 
-    suspend fun saveEvent(event: ActivityEvent) {
-        dao.insert(event)
+    suspend fun saveEvents(events: List<ActivityEvent>) {
+        dao.insert(events)
 
         val pending = dao.getPending()
 
@@ -38,7 +38,7 @@ interface TelemetryApi {
 
 object ApiClient {
     val URL: String = BuildConfig.API_BASE_URL;
-    private val retrofit = Retrofit.Builder()
+    private val retrofit = Retrofit.Builder() // Retrofit is used to make HTTP calls
         .baseUrl(URL)
         .addConverterFactory(GsonConverterFactory.create())
         .build()

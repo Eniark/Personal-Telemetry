@@ -7,7 +7,12 @@ import androidx.work.WorkerParameters
 import android.app.AppOpsManager
 import android.app.usage.UsageStatsManager
 import android.os.Process
+import androidx.room.Room
 import com.example.personaltelemetry.app.database.ActivityEvent
+import com.example.personaltelemetry.app.database.AppDatabase
+import com.example.personaltelemetry.app.database.AppDatabase.Companion.getDatabase
+import com.example.personaltelemetry.app.repository.ApiClient
+import com.example.personaltelemetry.app.repository.TelemetryApi
 import com.example.personaltelemetry.app.repository.TelemetryRepository
 
 class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) { // Android can run this piece of code in the background asynchronously
@@ -22,23 +27,34 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
             val endTime = System.currentTimeMillis()
             val startTime = endTime - 1000 * 60 * CustomWorker.TRACKING_WINDOW_MINUTES // last 10 minutes
 
-            val stats = usageStatsManager.queryUsageStats(
+            var stats = usageStatsManager.queryUsageStats(
                 UsageStatsManager.INTERVAL_DAILY,
                 startTime,
                 endTime
             )
 
-            val recentApp = stats
-                .maxByOrNull { it.lastTimeUsed }
+            var events: List<ActivityEvent> = stats.filter {
+                it.lastTimeUsed > 0 // get apps with > 0 time usage
+            }.map {
+                val pm = applicationContext.packageManager
+                val appName = try {
+                    val appInfo = pm.getApplicationInfo(it.packageName, 0)
+                    pm.getApplicationLabel(appInfo).toString()
+                }
+                catch (e: Exception) {
+                    it.packageName
+                }
 
-            val packageName = recentApp?.packageName
-            val event = ActivityEvent(
-                packageName = packageName,
-                timestamp = System.currentTimeMillis(),
-                sent = false
-            )
+                ActivityEvent(
+                    packageName = appName,
+                    timestamp = System.currentTimeMillis(),
+                    sent = false
+                )
+            }
 
-            TelemetryRepository().sendEvents(event)
+            val db = getDatabase(applicationContext)
+
+            TelemetryRepository(db.activityEventDao(), ApiClient.api).saveEvents(events)
             Log.d("INFO", "Sent message to the API")
 
             Result.success()

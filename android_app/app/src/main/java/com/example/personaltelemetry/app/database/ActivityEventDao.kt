@@ -8,7 +8,7 @@ import androidx.room.Query
 interface ActivityEventDao {
 
     @Insert
-    suspend fun insert(event: ActivityEvent)
+    suspend fun insert(events: List<ActivityEvent>)
 
     @Query("SELECT * FROM ActivityEvent WHERE sent = 0")
     suspend fun getPending(): List<ActivityEvent>
