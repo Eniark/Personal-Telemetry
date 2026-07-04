@@ -3,6 +3,7 @@ package com.example.personaltelemetry.app.repository
 import com.example.personaltelemetry.BuildConfig
 import com.example.personaltelemetry.app.database.ActivityEvent
 import com.example.personaltelemetry.app.database.ActivityEventDao
+import kotlinx.coroutines.flow.Flow
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -14,6 +15,8 @@ class TelemetryRepository(
     private val api: TelemetryApi
 ) {
 
+    val eventsStoredCount: Flow<Int> = dao.getStoredEventsCount();
+    val eventsSentCount: Flow<Int> = dao.getSentEventsCount();
     suspend fun saveEventsToLocalDb(events: List<ActivityEvent>): Unit {
         dao.insert(events)
     }

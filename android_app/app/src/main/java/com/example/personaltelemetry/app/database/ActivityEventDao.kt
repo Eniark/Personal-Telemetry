@@ -21,5 +21,9 @@ interface ActivityEventDao {
     suspend fun clearTable();
 
     @Query("SELECT COUNT(*) FROM ActivityEvent")
-    fun getEventCount(): Flow<Int>
+    fun getStoredEventsCount(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM ActivityEvent where sent = 1")
+    fun getSentEventsCount(): Flow<Int>
+
 }

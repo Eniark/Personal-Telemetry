@@ -25,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -59,6 +60,7 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import com.example.personaltelemetry.app.system.PermissionsService
 import com.example.personaltelemetry.app.system.WifiService
+import com.example.personaltelemetry.app.viewModel.TelemetryViewModel
 import kotlin.collections.plusAssign
 import java.time.Instant
 
@@ -73,29 +75,17 @@ fun AppTheme(content: @Composable () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TelemetryApp() {
-    var running by remember { mutableStateOf(false) } // "by remember" - allows the UI to automatically react to the state of a variable
+fun TelemetryApp(viewModel: TelemetryViewModel) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val permissionsService = PermissionsService(context);
-    var hasUsageStatsPermission by remember { // Allows the UI to track this variable and adjust itself
-        mutableStateOf(permissionsService.hasUsageStatsPermissions())
-    }
-    var hasLocationPermissions by remember {
-        mutableStateOf(permissionsService.hasLocationPermissions())
-    }
-
-    var numberOfSentEvents by remember {
-        mutableIntStateOf(0)
-    }
-    var numberOfStoredEvents by remember {
-        mutableIntStateOf(0)
-    }
+    val numberOfStoredEvents by viewModel.numberOfStoredEvents.collectAsState(0);
+    val numberOfSentEvents by viewModel.numberOfSentEvents.collectAsState(0);
 
     DisposableEffect(lifecycleOwner) { // Tracks when app becomes active again
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                hasUsageStatsPermission = permissionsService.hasUsageStatsPermissions()
+                viewModel.updateUsageStatsPermissions(permissionsService.hasUsageStatsPermissions())
             }
         }
 
@@ -110,12 +100,12 @@ fun TelemetryApp() {
     val statusColor: Color
 
     when {
-        !hasUsageStatsPermission || !hasLocationPermissions -> {
+        !viewModel.hasUsageStatsPermissions || !viewModel.hasLocationPermissions -> {
             statusText = "Permissions Required"
             statusColor = MaterialTheme.colorScheme.warning
         }
 
-        !running -> {
+        !viewModel.running -> {
             statusText = "Inactive"
             statusColor = MaterialTheme.colorScheme.onError
         }
@@ -131,31 +121,20 @@ fun TelemetryApp() {
             .background(
                 brush = Brush.linearGradient(
                     colors = listOf(
-                        Color(0xFF8E94F2),
-                        Color(0xFFFA824C)
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.secondary
                     )
                 )
             )
     ) {
         HeaderSection()
         BodySection(
-            running,
-            hasUsageStatsPermission,
-            hasLocationPermissions,
-            setLocationPermissions = {
-                hasLocationPermissions = it
-            },
-            onRunningChange = {
-                if (hasUsageStatsPermission && hasLocationPermissions) {
-                    running = it
-                }
-            },
-            onNewEventsStored = {
-                numberOfStoredEvents += it
-            },
-            onNewEventsSent = {
-                numberOfSentEvents += it
-            })
+            viewModel.running,
+            viewModel.hasUsageStatsPermissions,
+            viewModel.hasLocationPermissions,
+            setLocationPermissions = viewModel::updateLocationPermissions,
+            onRunningChange = viewModel::updateRunning
+        )
         StatusSection(statusText, statusColor, numberOfSentEvents, numberOfStoredEvents)
     }
 }
@@ -187,9 +166,7 @@ fun BodySection(
         hasUsageStatsPermission: Boolean,
         hasLocationPermission: Boolean,
         setLocationPermissions: (Boolean) -> Unit,
-        onRunningChange: (Boolean) -> Unit,
-        onNewEventsStored: (Int) -> Unit,
-        onNewEventsSent: (Int) -> Unit,) {
+        onRunningChange: (Boolean) -> Unit) {
 
     val context = LocalContext.current
     Column(
@@ -213,9 +190,7 @@ fun BodySection(
             hasUsageStatsPermission,
             onToggle = {
                 onRunningChange(it)
-            },
-            onNewEventsStored,
-            onNewEventsSent)
+            })
 
 
     }
@@ -284,9 +259,7 @@ fun TableRow(
 fun StartTrackingButton(
         running: Boolean,
         hasUsageStatsPermission: Boolean,
-        onToggle: (Boolean) -> Unit,
-        onNewEventsStored: (Int) -> Unit,
-        onNewEventsSent: (Int) -> Unit,
+        onToggle: (Boolean) -> Unit
         ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -341,7 +314,6 @@ fun StartTrackingButton(
                     ).saveEventsToLocalDb(events)
                 }
                 Log.d("Events:", events.size.toString())
-                onNewEventsStored(events.size)
                 scope.launch {
                     var eventsStored: List<ActivityEvent> = db.activityEventDao().getPending()
                     eventsStored.forEach {
