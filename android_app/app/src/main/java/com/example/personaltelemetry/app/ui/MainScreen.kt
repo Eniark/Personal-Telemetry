@@ -52,6 +52,7 @@ import com.example.personaltelemetry.app.backgroundWorker.CustomWorker
 import com.example.personaltelemetry.app.database.ActivityEventDao
 import com.example.personaltelemetry.app.database.AppDatabase.Companion.getDatabase
 import com.example.personaltelemetry.app.repository.ApiClient
+import com.example.personaltelemetry.app.repository.TelemetryApi
 import com.example.personaltelemetry.app.repository.TelemetryRepository
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
@@ -79,7 +80,7 @@ fun TelemetryApp() {
     var hasUsageStatsPermission by remember { // Allows the UI to track this variable and adjust itself
         mutableStateOf(permissionsService.hasUsageStatsPermissions())
     }
-    var hasLocationPermissions by remember { // Allows the UI to track this variable and adjust itself
+    var hasLocationPermissions by remember {
         mutableStateOf(permissionsService.hasLocationPermissions())
     }
 
@@ -144,7 +145,7 @@ fun TelemetryApp() {
                 hasLocationPermissions = it
             },
             onRunningChange = {
-                if (hasUsageStatsPermission) {
+                if (hasUsageStatsPermission && hasLocationPermissions) {
                     running = it
                 }
             },
@@ -287,16 +288,15 @@ fun StartTrackingButton(
         ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val db = getDatabase(context)
     Button(
 
         onClick = {
             val newValue = !running;
             onToggle(newValue);
-            Log.d("Access","${ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED}")
-            WifiService(context).isConnectedToHomeWifi()
+            scope.launch {
+                db.activityEventDao().clearTable()
+            }
 
 //            if (newValue && hasUsageStatsPermission) {
 ////                startTracking(context)

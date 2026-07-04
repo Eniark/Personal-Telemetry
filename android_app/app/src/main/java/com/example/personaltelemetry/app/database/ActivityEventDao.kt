@@ -13,6 +13,9 @@ interface ActivityEventDao {
     @Query("SELECT * FROM ActivityEvent WHERE sent = 0")
     suspend fun getPending(): List<ActivityEvent>
 
-    @Query("UPDATE ActivityEvent SET sent = 1 WHERE id in (:sentIds)")
-    suspend fun markAsSent(sentIds: List<Long>)
+    @Query("UPDATE ActivityEvent SET sent = 1 WHERE id in (:ids)")
+    suspend fun markAsSent(ids: List<Long>)
+
+    @Query("DELETE FROM ActivityEvent")
+    suspend fun clearTable();
 }

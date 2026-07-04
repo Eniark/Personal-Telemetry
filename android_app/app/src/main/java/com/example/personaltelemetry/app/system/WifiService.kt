@@ -23,11 +23,8 @@ class WifiService(
     }
 
     fun getCurrentSsid(): String? {
-        val connectivityManager =
-            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
         val wifiManager =
-            context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            context.getSystemService(Context.WIFI_SERVICE) as WifiManager
 
         val ssid = wifiManager.connectionInfo.ssid
 
