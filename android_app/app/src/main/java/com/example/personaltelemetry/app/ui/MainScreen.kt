@@ -1,10 +1,14 @@
 package com.example.personaltelemetry.app.ui
 
+import android.Manifest
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.provider.Settings
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,6 +40,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -43,13 +49,14 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.personaltelemetry.app.database.ActivityEvent
 import com.example.personaltelemetry.app.backgroundWorker.CustomWorker
-import com.example.personaltelemetry.app.backgroundWorker.checkAccessPermission
 import com.example.personaltelemetry.app.database.ActivityEventDao
 import com.example.personaltelemetry.app.database.AppDatabase.Companion.getDatabase
 import com.example.personaltelemetry.app.repository.ApiClient
 import com.example.personaltelemetry.app.repository.TelemetryRepository
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
+import com.example.personaltelemetry.app.system.PermissionsService
+import com.example.personaltelemetry.app.system.WifiService
 import kotlin.collections.plusAssign
 import java.time.Instant
 
@@ -68,9 +75,12 @@ fun TelemetryApp() {
     var running by remember { mutableStateOf(false) } // "by remember" - allows the UI to automatically react to the state of a variable
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-
-    var hasAccessPermission by remember { // Allows the UI to track this variable and adjust itself
-        mutableStateOf(checkAccessPermission(context))
+    val permissionsService = PermissionsService(context);
+    var hasUsageStatsPermission by remember { // Allows the UI to track this variable and adjust itself
+        mutableStateOf(permissionsService.hasUsageStatsPermissions())
+    }
+    var hasLocationPermissions by remember { // Allows the UI to track this variable and adjust itself
+        mutableStateOf(permissionsService.hasLocationPermissions())
     }
 
     var numberOfSentEvents by remember {
@@ -83,7 +93,7 @@ fun TelemetryApp() {
     DisposableEffect(lifecycleOwner) { // Tracks when app becomes active again
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                hasAccessPermission = checkAccessPermission(context)
+                hasUsageStatsPermission = permissionsService.hasUsageStatsPermissions()
             }
         }
 
@@ -98,7 +108,7 @@ fun TelemetryApp() {
     val statusColor: Color
 
     when {
-        !hasAccessPermission -> {
+        !hasUsageStatsPermission || !hasLocationPermissions -> {
             statusText = "Permissions Required"
             statusColor = MaterialTheme.colorScheme.warning
         }
@@ -128,9 +138,13 @@ fun TelemetryApp() {
         HeaderSection()
         BodySection(
             running,
-            hasAccessPermission,
+            hasUsageStatsPermission,
+            hasLocationPermissions,
+            setLocationPermissions = {
+                hasLocationPermissions = it
+            },
             onRunningChange = {
-                if (hasAccessPermission) {
+                if (hasUsageStatsPermission) {
                     running = it
                 }
             },
@@ -168,12 +182,14 @@ fun HeaderSection() {
 @Composable
 fun BodySection(
         running: Boolean,
-        hasAccessPermission: Boolean,
+        hasUsageStatsPermission: Boolean,
+        hasLocationPermission: Boolean,
+        setLocationPermissions: (Boolean) -> Unit,
         onRunningChange: (Boolean) -> Unit,
         onNewEventsStored: (Int) -> Unit,
         onNewEventsSent: (Int) -> Unit,) {
 
-
+    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -183,9 +199,16 @@ fun BodySection(
         horizontalAlignment = Alignment.CenterHorizontally
 
     ) {
-        PermissionAccessButton()
+        Row (
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            PermissionUsageStatsButton(context, Modifier.weight(0.8f))
+            PermissionWifiAccessButton(hasLocationPermission,setLocationPermissions,Modifier.weight(0.8f))
+        }
         StartTrackingButton(running,
-            hasAccessPermission,
+            hasUsageStatsPermission,
             onToggle = {
                 onRunningChange(it)
             },
@@ -257,7 +280,7 @@ fun TableRow(
 @Composable
 fun StartTrackingButton(
         running: Boolean,
-        hasAccessPermission: Boolean,
+        hasUsageStatsPermission: Boolean,
         onToggle: (Boolean) -> Unit,
         onNewEventsStored: (Int) -> Unit,
         onNewEventsSent: (Int) -> Unit,
@@ -269,64 +292,69 @@ fun StartTrackingButton(
         onClick = {
             val newValue = !running;
             onToggle(newValue);
+            Log.d("Access","${ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED}")
+            WifiService(context).isConnectedToHomeWifi()
 
-            if (newValue && hasAccessPermission) {
-//                startTracking(context)
-                val usageStatsManager =
-                    context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+//            if (newValue && hasUsageStatsPermission) {
+////                startTracking(context)
+//                val usageStatsManager =
+//                    context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+//
+//                val endTime = System.currentTimeMillis()
+//                val startTime = endTime - 1000 * 60 * CustomWorker.TRACKING_WINDOW_MINUTES // last 10 minutes
+//
+//                var stats = usageStatsManager.queryUsageStats(
+//                    UsageStatsManager.INTERVAL_DAILY,
+//                    startTime,
+//                    endTime
+//                )
+//
+//                var events: List<ActivityEvent> = stats.filter {
+//                    it.lastTimeUsed > 0 // get apps with > 0 time usage
+//                }.map {
+//                    val pm = context.packageManager
+//                    val appName = try {
+//                        val appInfo = pm.getApplicationInfo(it.packageName, 0)
+//                        pm.getApplicationLabel(appInfo).toString()
+//                    }
+//                    catch (e: Exception) {
+//                        it.packageName
+//                    }
+//
+//                    ActivityEvent(
+//                        packageName = appName,
+//                        timestamp = it.lastTimeUsed,
+//                        sent = false
+//                    )
+//                }
+//                val db = getDatabase(context)
+//
+//                scope.launch {
+//                    TelemetryRepository(
+//                        db.activityEventDao(),
+//                        ApiClient.api
+//                    ).saveEventsToLocalDb(events)
+//                }
+//                Log.d("Events:", events.size.toString())
+//                onNewEventsStored(events.size)
+//                scope.launch {
+//                    var eventsStored: List<ActivityEvent> = db.activityEventDao().getPending()
+//                    eventsStored.forEach {
+//                        Log.d("Database", it.toString())
+//                    }
+//                }
 
-                val endTime = System.currentTimeMillis()
-                val startTime = endTime - 1000 * 60 * CustomWorker.TRACKING_WINDOW_MINUTES // last 10 minutes
-
-                var stats = usageStatsManager.queryUsageStats(
-                    UsageStatsManager.INTERVAL_DAILY,
-                    startTime,
-                    endTime
-                )
-
-                var events: List<ActivityEvent> = stats.filter {
-                    it.lastTimeUsed > 0 // get apps with > 0 time usage
-                }.map {
-                    val pm = context.packageManager
-                    val appName = try {
-                        val appInfo = pm.getApplicationInfo(it.packageName, 0)
-                        pm.getApplicationLabel(appInfo).toString()
-                    }
-                    catch (e: Exception) {
-                        it.packageName
-                    }
-
-                    ActivityEvent(
-                        packageName = appName,
-                        timestamp = it.lastTimeUsed,
-                        sent = false
-                    )
-                }
-                val db = getDatabase(context)
-
-                scope.launch {
-                    TelemetryRepository(
-                        db.activityEventDao(),
-                        ApiClient.api
-                    ).saveEvents(events)
-                }
-                Log.d("Events:", events.size.toString())
-                onNewEventsStored(events.size)
-                scope.launch {
-                    var eventsStored: List<ActivityEvent> = db.activityEventDao().getPending()
-                    eventsStored.forEach {
-                        Log.d("Database", it.toString())
-                    }
-                }
-
-            }
+//            }
 
 
         },
         shape = RectangleShape,
         modifier = Modifier
             .height(100.dp)
-            .width(300.dp)
+            .fillMaxWidth()
     ) {
         Text(
             text = if (!running) "Start Tracking" else "Stop Tracking",
@@ -338,23 +366,42 @@ fun StartTrackingButton(
 
 
 @Composable
-fun PermissionAccessButton() {
-    val context = LocalContext.current
-
-
+fun PermissionUsageStatsButton(context: Context, modifier: Modifier) {
     Button(
         onClick = {
             val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
             context.startActivity(intent)
         },
         shape = RectangleShape,
-        modifier = Modifier
+        modifier = modifier
             .height(50.dp)
-            .width(300.dp)
     ) {
         Text(
-            text = "Grant Permission Access",
-            fontSize = 20.sp,
+            text = "Usage Access",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+fun PermissionWifiAccessButton(hasLocationPermission: Boolean, setLocationPermissions: (Boolean) -> Unit, modifier: Modifier) {
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) {
+        setLocationPermissions(hasLocationPermission)
+    }
+    Button(
+        onClick = {
+            launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        },
+        shape = RectangleShape,
+        modifier = modifier
+            .height(50.dp)
+    ) {
+        Text(
+            text = "Wifi Access",
+            fontSize = 15.sp,
             fontWeight = FontWeight.Bold
         )
     }

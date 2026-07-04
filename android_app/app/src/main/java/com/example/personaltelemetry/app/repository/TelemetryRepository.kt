@@ -14,15 +14,15 @@ class TelemetryRepository(
     private val api: TelemetryApi
 ) {
 
-    suspend fun saveEvents(events: List<ActivityEvent>) {
+    suspend fun saveEventsToLocalDb(events: List<ActivityEvent>) {
         dao.insert(events)
 
-        val pending = dao.getPending()
-
-        if (pending.size == 5) {
-            api.sendEvents(pending)
-            dao.markAsSent(pending.map { it.id })
-        }
+//        val pending = dao.getPending()
+//
+//        if (pending.size == 5) {
+//            api.sendEvents(pending)
+//            dao.markAsSent(pending.map { it.id })
+//        }
     }
 }
 

@@ -25,15 +25,15 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
                 applicationContext.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
 
             val endTime = System.currentTimeMillis()
-            val startTime = endTime - 1000 * 60 * CustomWorker.TRACKING_WINDOW_MINUTES // last 10 minutes
+            val startTime = endTime - 1000 * 60 * TRACKING_WINDOW_MINUTES // last 15 minutes
 
-            var stats = usageStatsManager.queryUsageStats(
+            val stats = usageStatsManager.queryUsageStats(
                 UsageStatsManager.INTERVAL_DAILY,
                 startTime,
                 endTime
             )
 
-            var events: List<ActivityEvent> = stats.filter {
+            val events: List<ActivityEvent> = stats.filter {
                 it.lastTimeUsed > 0 // get apps with > 0 time usage
             }.map {
                 val pm = applicationContext.packageManager
@@ -53,8 +53,9 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
             }
 
             val db = getDatabase(applicationContext)
+            val repository = TelemetryRepository(db.activityEventDao(), ApiClient.api)
 
-            TelemetryRepository(db.activityEventDao(), ApiClient.api).saveEvents(events)
+            repository.saveEventsToLocalDb(events)
             Log.d("INFO", "Sent message to the API")
 
             Result.success()
@@ -64,20 +65,11 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
         }
     }
 
+    fun getMostRecentActivity() {}
+
     companion object {
         const val TRACKING_WINDOW_MINUTES: Long = 15; // Check every 15 minutes the past 15 minutes. Rolling window.
     }
 }
 
 
-fun checkAccessPermission(context: Context): Boolean {
-    val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-
-    val mode = appOps.checkOpNoThrow(
-        AppOpsManager.OPSTR_GET_USAGE_STATS,
-        Process.myUid(),
-        context.packageName
-    )
-
-    return mode == AppOpsManager.MODE_ALLOWED
-}
