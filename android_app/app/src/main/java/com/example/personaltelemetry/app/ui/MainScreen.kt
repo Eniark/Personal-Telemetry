@@ -47,6 +47,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.example.personaltelemetry.app.database.ActivityEvent
 import com.example.personaltelemetry.app.backgroundWorker.CustomWorker
 import com.example.personaltelemetry.app.database.ActivityEventDao
@@ -224,7 +225,8 @@ fun BodySection(
 fun startTracking(context: Context) {
     val request = PeriodicWorkRequestBuilder<CustomWorker>(
         CustomWorker.TRACKING_WINDOW_MINUTES, TimeUnit.MINUTES
-    ).build()
+    )
+    .build()
 
     WorkManager.getInstance(context).enqueue(request)
 
@@ -294,60 +296,60 @@ fun StartTrackingButton(
         onClick = {
             val newValue = !running;
             onToggle(newValue);
-            scope.launch {
-                db.activityEventDao().clearTable()
-            }
-
-//            if (newValue && hasUsageStatsPermission) {
-////                startTracking(context)
-//                val usageStatsManager =
-//                    context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-//
-//                val endTime = System.currentTimeMillis()
-//                val startTime = endTime - 1000 * 60 * CustomWorker.TRACKING_WINDOW_MINUTES // last 10 minutes
-//
-//                var stats = usageStatsManager.queryUsageStats(
-//                    UsageStatsManager.INTERVAL_DAILY,
-//                    startTime,
-//                    endTime
-//                )
-//
-//                var events: List<ActivityEvent> = stats.filter {
-//                    it.lastTimeUsed > 0 // get apps with > 0 time usage
-//                }.map {
-//                    val pm = context.packageManager
-//                    val appName = try {
-//                        val appInfo = pm.getApplicationInfo(it.packageName, 0)
-//                        pm.getApplicationLabel(appInfo).toString()
-//                    }
-//                    catch (e: Exception) {
-//                        it.packageName
-//                    }
-//
-//                    ActivityEvent(
-//                        packageName = appName,
-//                        timestamp = it.lastTimeUsed,
-//                        sent = false
-//                    )
-//                }
-//                val db = getDatabase(context)
-//
-//                scope.launch {
-//                    TelemetryRepository(
-//                        db.activityEventDao(),
-//                        ApiClient.api
-//                    ).saveEventsToLocalDb(events)
-//                }
-//                Log.d("Events:", events.size.toString())
-//                onNewEventsStored(events.size)
-//                scope.launch {
-//                    var eventsStored: List<ActivityEvent> = db.activityEventDao().getPending()
-//                    eventsStored.forEach {
-//                        Log.d("Database", it.toString())
-//                    }
-//                }
-
+//            scope.launch {
+//                db.activityEventDao().clearTable()
 //            }
+
+            if (newValue && hasUsageStatsPermission) {
+//                startTracking(context, onNewEventsStored)
+                val usageStatsManager =
+                    context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+
+                val endTime = System.currentTimeMillis()
+                val startTime = endTime - 1000 * 60 * CustomWorker.TRACKING_WINDOW_MINUTES // last 10 minutes
+
+                var stats = usageStatsManager.queryUsageStats(
+                    UsageStatsManager.INTERVAL_DAILY,
+                    startTime,
+                    endTime
+                )
+
+                var events: List<ActivityEvent> = stats.filter {
+                    it.lastTimeUsed > 0 // get apps with > 0 time usage
+                }.map {
+                    val pm = context.packageManager
+                    val appName = try {
+                        val appInfo = pm.getApplicationInfo(it.packageName, 0)
+                        pm.getApplicationLabel(appInfo).toString()
+                    }
+                    catch (e: Exception) {
+                        it.packageName
+                    }
+
+                    ActivityEvent(
+                        packageName = appName,
+                        timestamp = it.lastTimeUsed,
+                        sent = false
+                    )
+                }
+                val db = getDatabase(context)
+
+                scope.launch {
+                    TelemetryRepository(
+                        db.activityEventDao(),
+                        ApiClient.api
+                    ).saveEventsToLocalDb(events)
+                }
+                Log.d("Events:", events.size.toString())
+                onNewEventsStored(events.size)
+                scope.launch {
+                    var eventsStored: List<ActivityEvent> = db.activityEventDao().getPending()
+                    eventsStored.forEach {
+                        Log.d("Database", it.toString())
+                    }
+                }
+
+            }
 
 
         },

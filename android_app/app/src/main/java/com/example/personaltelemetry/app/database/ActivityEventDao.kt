@@ -3,6 +3,7 @@ package com.example.personaltelemetry.app.database
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ActivityEventDao {
@@ -18,4 +19,7 @@ interface ActivityEventDao {
 
     @Query("DELETE FROM ActivityEvent")
     suspend fun clearTable();
+
+    @Query("SELECT COUNT(*) FROM ActivityEvent")
+    fun getEventCount(): Flow<Int>
 }
