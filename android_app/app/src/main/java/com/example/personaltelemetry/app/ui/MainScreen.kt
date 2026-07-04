@@ -280,8 +280,10 @@ fun StartTrackingButton(
 
                 val endTime = System.currentTimeMillis()
                 val startTime = endTime - 1000 * 60 * CustomWorker.TRACKING_WINDOW_MINUTES // last 10 minutes
-
-                var stats = usageStatsManager.queryUsageStats(
+                Log.d("Timefrom", startTime.toString())
+                Log.d("TimeTo", endTime.toString())
+                var stats = usageStatsManager
+                    .queryUsageStats(
                     UsageStatsManager.INTERVAL_DAILY,
                     startTime,
                     endTime

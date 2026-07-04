@@ -26,13 +26,6 @@ class TelemetryViewModel(
     var running by mutableStateOf(false)
         private set
 
-//    fun incrementNumberOfSentEvents(value: Int) {
-//        numberOfSentEvents += value;
-//    }
-//    fun incrementNumberOfStoredEvents(value: Int) {
-//        numberOfStoredEvents += value;
-//    }
-
     fun updateLocationPermissions(value: Boolean) {
         hasLocationPermissions = value
     }
@@ -49,7 +42,7 @@ class TelemetryViewModel(
 }
 
 
-class TelemetryViewModelFactory(
+class TelemetryViewModelFactory( // the factory was created because Android specifically manages the viewModel. When creating manually a new TelemetryViewModel -> Android stops managing it, so when a screen rotates -> the TelemetryViewModel is recreated and all state is lost.
     private val repository: TelemetryRepository
 ) : ViewModelProvider.Factory {
 
