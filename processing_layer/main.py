@@ -57,7 +57,7 @@ class ActivityRepository:
         self.db.executemany("""
             INSERT INTO browser_activity
             (website, started_at, ended_at, activity_id)
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?)
         """, (
             [
                 (
