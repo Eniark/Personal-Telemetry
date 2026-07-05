@@ -66,9 +66,9 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
             }
 
             ActivityEvent(
-                packageName = appName,
-                timestamp = System.currentTimeMillis(),
-                sent = false
+                name = appName,
+                usedAtTimestamp = System.currentTimeMillis(),
+                sentToApi = false
             )
         }
 

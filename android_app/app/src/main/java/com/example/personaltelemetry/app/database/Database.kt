@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [ActivityEvent::class], version = 1)
+@Database(entities = [ActivityEvent::class], version = 2)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun activityEventDao(): ActivityEventDao
 
@@ -16,11 +16,14 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {  // ?: if (INSTANCE==true) -> return INSTANCE. synchronized = guarantees only 1 thread will execute the method
-                INSTANCE ?: Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "telemetry.db"
-                ).build().also {
+                INSTANCE ?:
+                    Room.databaseBuilder(
+                        context.applicationContext,
+                        AppDatabase::class.java,
+                        "telemetry.db"
+                    )
+                    .fallbackToDestructiveMigration(true)
+                    .build().also {
                     INSTANCE = it // sets the database into the INSTANCE attribute
                 }
             }

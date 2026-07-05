@@ -1,5 +1,6 @@
 package com.example.personaltelemetry.app.repository
 
+import android.util.Log
 import com.example.personaltelemetry.BuildConfig
 import com.example.personaltelemetry.app.database.ActivityEvent
 import com.example.personaltelemetry.app.database.ActivityEventDao
@@ -24,6 +25,7 @@ class TelemetryRepository(
     suspend fun sendEventsToAPI(events: List<ActivityEvent>): Unit {
         var pendingEvents = dao.getPending()
         pendingEvents = events + pendingEvents
+        Log.d("pendingEvents", pendingEvents.toString())
 
         if (pendingEvents.size > 5) {
             api.sendEvents(pendingEvents)

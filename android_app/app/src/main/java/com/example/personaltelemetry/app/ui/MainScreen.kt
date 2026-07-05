@@ -1,9 +1,11 @@
 package com.example.personaltelemetry.app.ui
 
 import android.Manifest
+import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.provider.Settings
 import android.util.Log
@@ -280,46 +282,61 @@ fun StartTrackingButton(
 
                 val endTime = System.currentTimeMillis()
                 val startTime = endTime - 1000 * 60 * CustomWorker.TRACKING_WINDOW_MINUTES // last 10 minutes
-                Log.d("Timefrom", startTime.toString())
-                Log.d("TimeTo", endTime.toString())
-                var stats = usageStatsManager
+                val stats = usageStatsManager
                     .queryUsageStats(
-                    UsageStatsManager.INTERVAL_DAILY,
-                    startTime,
-                    endTime
+                        UsageStatsManager.INTERVAL_DAILY,
+                        startTime,
+                        endTime
                 )
 
-                var events: List<ActivityEvent> = stats.filter {
-                    it.lastTimeUsed > 0 // get apps with > 0 time usage
+                val pm = context.packageManager
+                // Filter the apps to non-system apps and apps whose last activity falls between during the time window as usageStatsManager provides aggregated information
+                val activityEvents: List<ActivityEvent> = stats.filter {
+                    val isSystem = try {
+                        val appInfo = pm.getApplicationInfo(it.packageName, 0)
+                        (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0 ||
+                                (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
+
+                    }
+                    catch (e: Exception) {
+                        false
+                    }
+
+                    it.lastTimeUsed in startTime..endTime && !isSystem
                 }.map {
-                    val pm = context.packageManager
                     val appName = try {
                         val appInfo = pm.getApplicationInfo(it.packageName, 0)
                         pm.getApplicationLabel(appInfo).toString()
                     }
                     catch (e: Exception) {
-                        it.packageName
+                        it.packageName // fall back to package name
                     }
 
                     ActivityEvent(
-                        packageName = appName,
-                        timestamp = it.lastTimeUsed,
-                        sent = false
+                        name = appName,
+                        usedAtTimestamp = it.lastTimeUsed,
+                        sentToApi = false
                     )
                 }
+
                 val db = getDatabase(context)
+                val repository = TelemetryRepository(db.activityEventDao(), ApiClient.api)
+                val wifiService = WifiService(context)
+
+                Log.d("INFO", "Sent message to the API")
 
                 scope.launch {
                     TelemetryRepository(
                         db.activityEventDao(),
                         ApiClient.api
-                    ).saveEventsToLocalDb(events)
-                }
-                Log.d("Events:", events.size.toString())
-                scope.launch {
-                    var eventsStored: List<ActivityEvent> = db.activityEventDao().getPending()
-                    eventsStored.forEach {
-                        Log.d("Database", it.toString())
+                    ).saveEventsToLocalDb(activityEvents)
+
+                    if (wifiService.isConnectedToHomeWifi()) {
+                        repository.sendEventsToAPI(activityEvents)
+                    }
+
+                    activityEvents.forEach {
+                        Log.d("Sending to DB/API", it.toString())
                     }
                 }
 

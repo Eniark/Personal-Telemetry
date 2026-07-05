@@ -7,8 +7,8 @@ import java.util.Date
 data class ActivityEvent(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    val packageName: String?,
-    val timestamp: Long,
-    val sent: Boolean
+    val name: String?,
+    val usedAtTimestamp: Long,
+    val sentToApi: Boolean
 )
 

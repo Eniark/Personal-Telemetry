@@ -11,10 +11,10 @@ interface ActivityEventDao {
     @Insert
     suspend fun insert(events: List<ActivityEvent>)
 
-    @Query("SELECT * FROM ActivityEvent WHERE sent = 0")
+    @Query("SELECT * FROM ActivityEvent WHERE sentToApi = 0")
     suspend fun getPending(): List<ActivityEvent>
 
-    @Query("UPDATE ActivityEvent SET sent = 1 WHERE id in (:ids)")
+    @Query("UPDATE ActivityEvent SET sentToApi = 1 WHERE id in (:ids)")
     suspend fun markAsSent(ids: List<Long>)
 
     @Query("DELETE FROM ActivityEvent")
@@ -23,7 +23,7 @@ interface ActivityEventDao {
     @Query("SELECT COUNT(*) FROM ActivityEvent")
     fun getStoredEventsCount(): Flow<Int>
 
-    @Query("SELECT COUNT(*) FROM ActivityEvent where sent = 1")
+    @Query("SELECT COUNT(*) FROM ActivityEvent where sentToApi = 1")
     fun getSentEventsCount(): Flow<Int>
 
 }
