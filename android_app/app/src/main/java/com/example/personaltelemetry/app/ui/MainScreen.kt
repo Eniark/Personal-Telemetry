@@ -88,6 +88,7 @@ fun TelemetryApp(viewModel: TelemetryViewModel) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 viewModel.updateUsageStatsPermissions(permissionsService.hasUsageStatsPermissions())
+                viewModel.updateLocationPermissions(permissionsService.hasLocationPermissions())
             }
         }
 
@@ -330,7 +331,6 @@ fun StartTrackingButton(
                         db.activityEventDao(),
                         ApiClient.api
                     ).saveEventsToLocalDb(activityEvents)
-
                     if (wifiService.isConnectedToHomeWifi()) {
                         repository.sendEventsToAPI(activityEvents)
                     }
@@ -393,7 +393,7 @@ fun PermissionWifiAccessButton(hasLocationPermission: Boolean, setLocationPermis
             .height(50.dp)
     ) {
         Text(
-            text = "Wifi Access",
+            text = "WiFi Access",
             fontSize = 15.sp,
             fontWeight = FontWeight.Bold
         )
