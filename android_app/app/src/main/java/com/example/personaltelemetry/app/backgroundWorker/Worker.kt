@@ -6,6 +6,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import android.app.AppOpsManager
 import android.app.usage.UsageStatsManager
+import android.content.pm.ApplicationInfo
 import android.os.Process
 import androidx.room.Room
 import com.example.personaltelemetry.app.database.ActivityEvent
@@ -15,6 +16,7 @@ import com.example.personaltelemetry.app.repository.ApiClient
 import com.example.personaltelemetry.app.repository.TelemetryApi
 import com.example.personaltelemetry.app.repository.TelemetryRepository
 import com.example.personaltelemetry.app.system.WifiService
+import kotlinx.coroutines.launch
 
 class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) { // Android can run this piece of code in the background asynchronously
 
@@ -22,18 +24,25 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
         return try {
 
             Log.d("WORKER", "Running background task")
-            val events = getMostRecentActivities()
-
+            val activityEvents = getMostRecentActivities()
             val db = getDatabase(applicationContext)
             val repository = TelemetryRepository(db.activityEventDao(), ApiClient.api)
             val wifiService = WifiService(applicationContext)
 
-            repository.saveEventsToLocalDb(events)
             Log.d("INFO", "Sent message to the API")
 
+            TelemetryRepository(
+                db.activityEventDao(),
+                ApiClient.api
+            ).saveEventsToLocalDb(activityEvents)
             if (wifiService.isConnectedToHomeWifi()) {
-                repository.sendEventsToAPI(events)
+                repository.sendEventsToAPI(activityEvents)
             }
+
+            activityEvents.forEach {
+                Log.d("Sending to DB/API", it.toString())
+            }
+
             Result.success()
         } catch (e: Exception) {
             Log.e("WORKER", "Failed", e)
@@ -46,33 +55,45 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
             applicationContext.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
 
         val endTime = System.currentTimeMillis()
-        val startTime = endTime - 1000 * 60 * TRACKING_WINDOW_MINUTES // last 15 minutes
+        val startTime = endTime - 1000 * 60 * CustomWorker.TRACKING_WINDOW_MINUTES // last 10 minutes
+        val stats = usageStatsManager
+            .queryUsageStats(
+                UsageStatsManager.INTERVAL_DAILY,
+                startTime,
+                endTime
+            )
 
-        val stats = usageStatsManager.queryUsageStats(
-            UsageStatsManager.INTERVAL_DAILY,
-            startTime,
-            endTime
-        )
+        val pm = applicationContext.packageManager
+        // Filter the apps to non-system apps and apps whose last activity falls between during the time window as usageStatsManager provides aggregated information
+        val activityEvents: List<ActivityEvent> = stats.filter {
+            val isSystem = try {
+                val appInfo = pm.getApplicationInfo(it.packageName, 0)
+                (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0 ||
+                        (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
 
-        val events: List<ActivityEvent> = stats.filter {
-            it.lastTimeUsed > 0 // get apps with > 0 time usage
+            }
+            catch (e: Exception) {
+                false
+            }
+
+            it.lastTimeUsed in startTime..endTime && !isSystem
         }.map {
-            val pm = applicationContext.packageManager
             val appName = try {
                 val appInfo = pm.getApplicationInfo(it.packageName, 0)
                 pm.getApplicationLabel(appInfo).toString()
-            } catch (e: Exception) {
-                it.packageName
+            }
+            catch (e: Exception) {
+                it.packageName // fall back to package name
             }
 
             ActivityEvent(
                 name = appName,
-                usedAtTimestamp = System.currentTimeMillis(),
+                usedAtTimestamp = it.lastTimeUsed,
                 sentToApi = false
             )
         }
 
-        return events
+        return activityEvents
     }
 
     companion object {

@@ -265,10 +265,9 @@ fun StartTrackingButton(
         onToggle: (Boolean) -> Unit
         ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val db = getDatabase(context)
+//    val scope = rememberCoroutineScope()
+//    val db = getDatabase(context)
     Button(
-
         onClick = {
             val newValue = !running;
             onToggle(newValue);
@@ -277,68 +276,68 @@ fun StartTrackingButton(
 //            }
 
             if (newValue && hasUsageStatsPermission) {
-//                startTracking(context, onNewEventsStored)
-                val usageStatsManager =
-                    context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-
-                val endTime = System.currentTimeMillis()
-                val startTime = endTime - 1000 * 60 * CustomWorker.TRACKING_WINDOW_MINUTES // last 10 minutes
-                val stats = usageStatsManager
-                    .queryUsageStats(
-                        UsageStatsManager.INTERVAL_DAILY,
-                        startTime,
-                        endTime
-                )
-
-                val pm = context.packageManager
-                // Filter the apps to non-system apps and apps whose last activity falls between during the time window as usageStatsManager provides aggregated information
-                val activityEvents: List<ActivityEvent> = stats.filter {
-                    val isSystem = try {
-                        val appInfo = pm.getApplicationInfo(it.packageName, 0)
-                        (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0 ||
-                                (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
-
-                    }
-                    catch (e: Exception) {
-                        false
-                    }
-
-                    it.lastTimeUsed in startTime..endTime && !isSystem
-                }.map {
-                    val appName = try {
-                        val appInfo = pm.getApplicationInfo(it.packageName, 0)
-                        pm.getApplicationLabel(appInfo).toString()
-                    }
-                    catch (e: Exception) {
-                        it.packageName // fall back to package name
-                    }
-
-                    ActivityEvent(
-                        name = appName,
-                        usedAtTimestamp = it.lastTimeUsed,
-                        sentToApi = false
-                    )
-                }
-
-                val db = getDatabase(context)
-                val repository = TelemetryRepository(db.activityEventDao(), ApiClient.api)
-                val wifiService = WifiService(context)
-
-                Log.d("INFO", "Sent message to the API")
-
-                scope.launch {
-                    TelemetryRepository(
-                        db.activityEventDao(),
-                        ApiClient.api
-                    ).saveEventsToLocalDb(activityEvents)
-                    if (wifiService.isConnectedToHomeWifi()) {
-                        repository.sendEventsToAPI(activityEvents)
-                    }
-
-                    activityEvents.forEach {
-                        Log.d("Sending to DB/API", it.toString())
-                    }
-                }
+                startTracking(context)
+//                val usageStatsManager =
+//                    context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+//
+//                val endTime = System.currentTimeMillis()
+//                val startTime = endTime - 1000 * 60 * CustomWorker.TRACKING_WINDOW_MINUTES // last 10 minutes
+//                val stats = usageStatsManager
+//                    .queryUsageStats(
+//                        UsageStatsManager.INTERVAL_DAILY,
+//                        startTime,
+//                        endTime
+//                )
+//
+//                val pm = context.packageManager
+//                // Filter the apps to non-system apps and apps whose last activity falls between during the time window as usageStatsManager provides aggregated information
+//                val activityEvents: List<ActivityEvent> = stats.filter {
+//                    val isSystem = try {
+//                        val appInfo = pm.getApplicationInfo(it.packageName, 0)
+//                        (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0 ||
+//                                (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
+//
+//                    }
+//                    catch (e: Exception) {
+//                        false
+//                    }
+//
+//                    it.lastTimeUsed in startTime..endTime && !isSystem
+//                }.map {
+//                    val appName = try {
+//                        val appInfo = pm.getApplicationInfo(it.packageName, 0)
+//                        pm.getApplicationLabel(appInfo).toString()
+//                    }
+//                    catch (e: Exception) {
+//                        it.packageName // fall back to package name
+//                    }
+//
+//                    ActivityEvent(
+//                        name = appName,
+//                        usedAtTimestamp = it.lastTimeUsed,
+//                        sentToApi = false
+//                    )
+//                }
+//
+//                val db = getDatabase(context)
+//                val repository = TelemetryRepository(db.activityEventDao(), ApiClient.api)
+//                val wifiService = WifiService(context)
+//
+//                Log.d("INFO", "Sent message to the API")
+//
+//                scope.launch {
+//                    TelemetryRepository(
+//                        db.activityEventDao(),
+//                        ApiClient.api
+//                    ).saveEventsToLocalDb(activityEvents)
+//                    if (wifiService.isConnectedToHomeWifi()) {
+//                        repository.sendEventsToAPI(activityEvents)
+//                    }
+//
+//                    activityEvents.forEach {
+//                        Log.d("Sending to DB/API", it.toString())
+//                    }
+//                }
 
             }
 
