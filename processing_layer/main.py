@@ -1,33 +1,5 @@
-from dataclasses import dataclass
 from logger import logger
-import datetime
-from configs import TIMESTAMP_FORMAT, TIMESTAMP_MS_PRECISION
-
-"""
-ToDo: split to Base+child classes
-"""
-
-@dataclass
-class Event:
-    started_at: int
-    ended_at: int
-    duration_ms: int
-
-@dataclass
-class OperatingSystemEvent(Event):
-    process: str
-
-    def __repr__(self):
-        return f"OS Activity: {self.process=}, {self.started_at=}"
-
-@dataclass
-class BrowserEvent(Event):
-    os_event_id: int = None
-    website: str | None = None
-    website_title: str | None = None
-
-    def __repr__(self):
-        return f"Browser Activity: {self.website=}, {self.os_event_id=}"
+from processing_layer.event import BrowserEvent, OperatingSystemEvent
 
 class EventProcessor:
     def __init__(self, repository):
@@ -37,37 +9,15 @@ class EventProcessor:
         self.browser_activities = []
         self.batch_size = 5
 
-    def handle_browser_event(self, payload):
-        started_at = datetime.datetime.fromtimestamp(
-            payload.get('started_at') / 1000
-        ).strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION] # Converts Unix-style timetamp to human-readable format 
-
-        event = BrowserEvent(
-            os_event_id=self.os_activity_last_row_id,
-            started_at=started_at,
-            ended_at=payload.get("ended_at"),
-            duration_ms=None,
-            website = payload.get("website"),
-            website_title = payload.get("title")
-        )
-
+    def handle_browser_event(self, event: BrowserEvent):
         self.browser_activities.append(event)
-
         
         if len(self.browser_activities) > self.batch_size:  # fix data sync issue
             self.repository.insert_browser_activities(self.browser_activities)
             self.browser_activities = []
         logger.info(f"Browser Event: {event.website} - {event.os_event_id}")
 
-    def handle_os_event(self, payload):
-        ended_at = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
-        event = OperatingSystemEvent(
-            process=payload.get("process"),
-            started_at=payload.get("started_at"),
-            ended_at=ended_at,
-            duration_ms=None,
-        )
-
+    def handle_os_event(self, event: OperatingSystemEvent):
         self.os_activities.append(event)
         self.os_activity_last_row_id += 1
         if len(self.browser_activities) > self.batch_size: # for case when user is stuck in browser

@@ -10,7 +10,8 @@ cursor.execute(
     CREATE TABLE IF NOT EXISTS os_activity (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         window TEXT,
-        started_at INTEGER
+        started_at INTEGER,
+        type TEXT
     )
     """)
 

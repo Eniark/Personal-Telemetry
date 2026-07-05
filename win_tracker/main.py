@@ -4,10 +4,14 @@ import pythoncom
 import requests
 import datetime
 from configs import TIMESTAMP_FORMAT, TIMESTAMP_MS_PRECISION
-import win32gui
+import os
 import win32process
 import psutil
+from dotenv import load_dotenv
+load_dotenv()
 
+HOST = os.getenv("HOST")
+PORT = int(os.getenv("PORT"))
 
 BROWSERS = {
     "chrome.exe",
@@ -41,7 +45,7 @@ def callback(hook, event, hwnd, idObject, idChild, thread, time):
                 "started_at": datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
             }
             print(data)
-            requests.post("http://127.0.0.1:8000/os_event", json=data)
+            requests.post(f"http://{HOST}:{PORT}/os_event", json=data)
             
 
 WinEventProc = ctypes.WINFUNCTYPE(
