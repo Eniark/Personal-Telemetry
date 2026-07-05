@@ -37,7 +37,7 @@ class TelemetryRepository(
 
 interface TelemetryApi {
 
-    @POST("os_event")
+    @POST("phone_event")
     suspend fun sendEvents( // suspend = async
         @Body events: List<ActivityEvent>
     ): Response<Unit>

@@ -26,6 +26,11 @@ async def event(payload: dict):
     event_processor.handle_os_event(payload)
     return {"ok": True}
 
+@app.post("/phone_event")
+async def event(payload: list[dict]):
+    print(payload)
+    # event_processor.handle_os_event(payload)
+    return {"ok": True}
 
 
 if __name__ == "__main__":
