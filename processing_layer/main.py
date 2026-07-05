@@ -56,7 +56,7 @@ class ActivityRepository:
     def insert_browser_activities(self, activities): # not working properly
         self.db.executemany("""
             INSERT INTO browser_activity
-            (website, started_at, ended_at, duration_ms, activity_id)
+            (website, started_at, ended_at, activity_id)
             VALUES (?, ?, ?, ?, ?)
         """, (
             [
@@ -64,7 +64,6 @@ class ActivityRepository:
                     activity.website,
                     activity.started_at,
                     activity.ended_at,
-                    activity.duration_ms,
                     activity.os_event_id
                 )
                 for activity in activities
