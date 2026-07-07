@@ -1,12 +1,8 @@
 package com.example.personaltelemetry.app.ui
 
 import android.Manifest
-import android.app.usage.UsageEvents
-import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
 import android.provider.Settings
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -20,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -29,11 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -43,30 +33,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.workDataOf
-import com.example.personaltelemetry.app.database.ActivityEvent
-import com.example.personaltelemetry.app.backgroundWorker.CustomWorker
-import com.example.personaltelemetry.app.database.ActivityEventDao
-import com.example.personaltelemetry.app.database.AppDatabase.Companion.getDatabase
-import com.example.personaltelemetry.app.repository.ApiClient
-import com.example.personaltelemetry.app.repository.TelemetryApi
-import com.example.personaltelemetry.app.repository.TelemetryRepository
-import kotlinx.coroutines.launch
-import java.util.concurrent.TimeUnit
 import com.example.personaltelemetry.app.system.PermissionsService
-import com.example.personaltelemetry.app.system.WifiService
 import com.example.personaltelemetry.app.viewModel.TelemetryViewModel
-import kotlin.collections.plusAssign
-import java.time.Instant
-import com.example.personaltelemetry.app.backgroundWorker.WorkerManager
 
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {
