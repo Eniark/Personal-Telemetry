@@ -26,7 +26,7 @@ class TelemetryViewModel(
     var numberOfSentEvents = repository.eventsSentCount;
     var numberOfStoredEvents = repository.eventsStoredCount;
 
-    var running by mutableStateOf(workerManager.isWorkerRunning())
+    var isTracking by mutableStateOf(workerManager.isWorkerRunning())
         private set
 
     fun updateLocationPermissions(value: Boolean) {
@@ -36,13 +36,19 @@ class TelemetryViewModel(
     fun updateUsageStatsPermissions(value: Boolean) {
         hasUsageStatsPermissions = value
     }
-    fun updateRunning(value: Boolean) {
+    fun onToggleTracking() {
         if (hasUsageStatsPermissions && hasLocationPermissions) {
-            running = value
+            isTracking = !isTracking
+            if (isTracking) {
+                workerManager.startTracking()
+            }
+            else {
+                workerManager.stopTracking()
+            }
         }
-    }
-    fun startTracking() {
-        workerManager.startTracking()
+
+
+
     }
 
 }

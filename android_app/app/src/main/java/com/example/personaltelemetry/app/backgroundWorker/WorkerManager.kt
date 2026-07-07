@@ -32,4 +32,10 @@ class WorkerManager (
             request)
     }
 
+    fun stopTracking() {
+        WorkManager
+            .getInstance(context)
+            .cancelUniqueWork(UNIQUE_WORKER_NAME)
+    }
+
 }

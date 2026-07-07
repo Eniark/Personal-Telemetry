@@ -110,7 +110,7 @@ fun TelemetryApp(viewModel: TelemetryViewModel) {
             statusColor = MaterialTheme.colorScheme.warning
         }
 
-        !viewModel.running -> {
+        !viewModel.isTracking -> {
             statusText = "Inactive"
             statusColor = MaterialTheme.colorScheme.onError
         }
@@ -134,12 +134,10 @@ fun TelemetryApp(viewModel: TelemetryViewModel) {
     ) {
         HeaderSection()
         BodySection(
-            viewModel.running,
-            viewModel.hasUsageStatsPermissions,
             viewModel.hasLocationPermissions,
             setLocationPermissions = viewModel::updateLocationPermissions,
-            onRunningChange = viewModel::updateRunning,
-            onStartTracking = viewModel::startTracking
+            isTracking = viewModel.isTracking,
+            onToggleTracking = viewModel::onToggleTracking
         )
         StatusSection(statusText, statusColor, numberOfSentEvents, numberOfStoredEvents)
     }
@@ -168,12 +166,10 @@ fun HeaderSection() {
 
 @Composable
 fun BodySection(
-        running: Boolean,
-        hasUsageStatsPermission: Boolean,
         hasLocationPermission: Boolean,
         setLocationPermissions: (Boolean) -> Unit,
-        onRunningChange: (Boolean) -> Unit,
-        onStartTracking: () -> Unit) {
+        isTracking: Boolean,
+        onToggleTracking: () -> Unit) {
 
     val context = LocalContext.current
     Column(
@@ -193,12 +189,9 @@ fun BodySection(
             PermissionUsageStatsButton(context, Modifier.weight(0.8f))
             PermissionWifiAccessButton(hasLocationPermission,setLocationPermissions,Modifier.weight(0.8f))
         }
-        StartTrackingButton(running,
-            hasUsageStatsPermission,
-            onToggle = {
-                onRunningChange(it)
-            },
-            onStartTracking = onStartTracking
+        StartTrackingButton(
+            isTracking = isTracking,
+            onToggleTracking = onToggleTracking
         )
     }
 
@@ -255,24 +248,21 @@ fun TableRow(
 }
 @Composable
 fun StartTrackingButton(
-        running: Boolean,
-        hasUsageStatsPermission: Boolean,
-        onToggle: (Boolean) -> Unit,
-        onStartTracking: () -> Unit
-        ) {
+        isTracking: Boolean,
+        onToggleTracking: () -> Unit,
+    ) {
 //    val context = LocalContext.current
 //    val scope = rememberCoroutineScope()
 //    val db = getDatabase(context)
     Button(
         onClick = {
-            val newValue = !running;
-            onToggle(newValue);
+//            val newValue = !running;
 //            scope.launch {
 //                db.activityEventDao().clearTable()
 //            }
 
-            if (newValue && hasUsageStatsPermission) {
-                onStartTracking()
+//                onToggle(newValue);
+                onToggleTracking()
 //                val usageStatsManager =
 //                    context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
 //
@@ -335,7 +325,7 @@ fun StartTrackingButton(
 //                    }
 //                }
 
-            }
+//            }
 
 
         },
@@ -345,7 +335,7 @@ fun StartTrackingButton(
             .fillMaxWidth()
     ) {
         Text(
-            text = if (!running) "Start Tracking" else "Stop Tracking",
+            text = if (!isTracking) "Start Tracking" else "Stop Tracking",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold
         )
