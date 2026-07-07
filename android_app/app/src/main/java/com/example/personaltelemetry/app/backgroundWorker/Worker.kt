@@ -9,6 +9,7 @@ import android.app.usage.UsageStatsManager
 import android.content.pm.ApplicationInfo
 import android.os.Process
 import androidx.room.Room
+import androidx.work.WorkManager
 import com.example.personaltelemetry.app.database.ActivityEvent
 import com.example.personaltelemetry.app.database.AppDatabase
 import com.example.personaltelemetry.app.database.AppDatabase.Companion.getDatabase
@@ -49,6 +50,8 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
             Result.retry()
         }
     }
+
+
 
     fun getMostRecentActivities(): List<ActivityEvent> {
         val usageStatsManager =

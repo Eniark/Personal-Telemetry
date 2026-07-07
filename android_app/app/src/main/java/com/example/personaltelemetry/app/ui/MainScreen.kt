@@ -48,6 +48,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -65,6 +66,7 @@ import com.example.personaltelemetry.app.system.WifiService
 import com.example.personaltelemetry.app.viewModel.TelemetryViewModel
 import kotlin.collections.plusAssign
 import java.time.Instant
+import com.example.personaltelemetry.app.backgroundWorker.WorkerManager
 
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {
@@ -136,7 +138,8 @@ fun TelemetryApp(viewModel: TelemetryViewModel) {
             viewModel.hasUsageStatsPermissions,
             viewModel.hasLocationPermissions,
             setLocationPermissions = viewModel::updateLocationPermissions,
-            onRunningChange = viewModel::updateRunning
+            onRunningChange = viewModel::updateRunning,
+            onStartTracking = viewModel::startTracking
         )
         StatusSection(statusText, statusColor, numberOfSentEvents, numberOfStoredEvents)
     }
@@ -169,7 +172,8 @@ fun BodySection(
         hasUsageStatsPermission: Boolean,
         hasLocationPermission: Boolean,
         setLocationPermissions: (Boolean) -> Unit,
-        onRunningChange: (Boolean) -> Unit) {
+        onRunningChange: (Boolean) -> Unit,
+        onStartTracking: () -> Unit) {
 
     val context = LocalContext.current
     Column(
@@ -193,22 +197,13 @@ fun BodySection(
             hasUsageStatsPermission,
             onToggle = {
                 onRunningChange(it)
-            })
-
-
+            },
+            onStartTracking = onStartTracking
+        )
     }
 
 }
 
-fun startTracking(context: Context) {
-    val request = PeriodicWorkRequestBuilder<CustomWorker>(
-        CustomWorker.TRACKING_WINDOW_MINUTES, TimeUnit.MINUTES
-    )
-    .build()
-
-    WorkManager.getInstance(context).enqueue(request)
-
-}
 
 @Composable
 fun StatusSection(
@@ -262,9 +257,10 @@ fun TableRow(
 fun StartTrackingButton(
         running: Boolean,
         hasUsageStatsPermission: Boolean,
-        onToggle: (Boolean) -> Unit
+        onToggle: (Boolean) -> Unit,
+        onStartTracking: () -> Unit
         ) {
-    val context = LocalContext.current
+//    val context = LocalContext.current
 //    val scope = rememberCoroutineScope()
 //    val db = getDatabase(context)
     Button(
@@ -276,7 +272,7 @@ fun StartTrackingButton(
 //            }
 
             if (newValue && hasUsageStatsPermission) {
-                startTracking(context)
+                onStartTracking()
 //                val usageStatsManager =
 //                    context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
 //
