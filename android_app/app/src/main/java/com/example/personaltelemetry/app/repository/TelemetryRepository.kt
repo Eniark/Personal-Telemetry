@@ -1,5 +1,6 @@
 package com.example.personaltelemetry.app.repository
 
+import android.R
 import android.util.Log
 import com.example.personaltelemetry.BuildConfig
 import com.example.personaltelemetry.app.database.ActivityEvent
@@ -13,7 +14,8 @@ import retrofit2.http.POST
 
 class TelemetryRepository(
     private val dao: ActivityEventDao,
-    private val api: TelemetryApi
+    private val api: TelemetryApi,
+    private val scraper: GooglePlayScraper
 ) {
 
     val eventsStoredCount: Flow<Int> = dao.getStoredEventsCount();
@@ -31,7 +33,10 @@ class TelemetryRepository(
             api.sendEvents(pendingEvents)
             dao.markAsSent(pendingEvents.map { it.id })
         }
+    }
 
+    suspend fun getAppInformation(packageName: String): Pair<String, String> {
+        return scraper.getAppInformation(packageName)
     }
 }
 

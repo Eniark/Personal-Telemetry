@@ -14,6 +14,7 @@ import com.example.personaltelemetry.app.database.ActivityEvent
 import com.example.personaltelemetry.app.database.AppDatabase
 import com.example.personaltelemetry.app.database.AppDatabase.Companion.getDatabase
 import com.example.personaltelemetry.app.repository.ApiClient
+import com.example.personaltelemetry.app.repository.GooglePlayScraper
 import com.example.personaltelemetry.app.repository.TelemetryApi
 import com.example.personaltelemetry.app.repository.TelemetryRepository
 import com.example.personaltelemetry.app.system.WifiService
@@ -27,15 +28,13 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
             Log.d("WORKER", "Running background task")
             val activityEvents = getMostRecentActivities()
             val db = getDatabase(applicationContext)
-            val repository = TelemetryRepository(db.activityEventDao(), ApiClient.api)
+            val scraper = GooglePlayScraper()
+            val repository = TelemetryRepository(db.activityEventDao(), ApiClient.api, scraper)
             val wifiService = WifiService(applicationContext)
 
             Log.d("INFO", "Sent message to the API")
 
-            TelemetryRepository(
-                db.activityEventDao(),
-                ApiClient.api
-            ).saveEventsToLocalDb(activityEvents)
+            repository.saveEventsToLocalDb(activityEvents)
             if (wifiService.isConnectedToHomeWifi()) {
                 repository.sendEventsToAPI(activityEvents)
             }

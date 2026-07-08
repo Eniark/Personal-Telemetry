@@ -1,8 +1,10 @@
 package com.example.personaltelemetry.app.ui
 
 import android.Manifest
+import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.provider.Settings
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -24,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -36,8 +39,12 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.example.personaltelemetry.app.backgroundWorker.CustomWorker
+import com.example.personaltelemetry.app.database.ActivityEvent
+import com.example.personaltelemetry.app.database.AppDatabase.Companion.getDatabase
 import com.example.personaltelemetry.app.system.PermissionsService
 import com.example.personaltelemetry.app.viewModel.TelemetryViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {
@@ -217,88 +224,22 @@ fun TableRow(
         )
     }
 }
+
+
 @Composable
 fun StartTrackingButton(
         isTracking: Boolean,
         onToggleTracking: () -> Unit,
     ) {
 //    val context = LocalContext.current
-//    val scope = rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
 //    val db = getDatabase(context)
     Button(
         onClick = {
-//            val newValue = !running;
 //            scope.launch {
 //                db.activityEventDao().clearTable()
 //            }
-
-//                onToggle(newValue);
                 onToggleTracking()
-//                val usageStatsManager =
-//                    context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-//
-//                val endTime = System.currentTimeMillis()
-//                val startTime = endTime - 1000 * 60 * CustomWorker.TRACKING_WINDOW_MINUTES // last 10 minutes
-//                val stats = usageStatsManager
-//                    .queryUsageStats(
-//                        UsageStatsManager.INTERVAL_DAILY,
-//                        startTime,
-//                        endTime
-//                )
-//
-//                val pm = context.packageManager
-//                // Filter the apps to non-system apps and apps whose last activity falls between during the time window as usageStatsManager provides aggregated information
-//                val activityEvents: List<ActivityEvent> = stats.filter {
-//                    val isSystem = try {
-//                        val appInfo = pm.getApplicationInfo(it.packageName, 0)
-//                        (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0 ||
-//                                (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
-//
-//                    }
-//                    catch (e: Exception) {
-//                        false
-//                    }
-//
-//                    it.lastTimeUsed in startTime..endTime && !isSystem
-//                }.map {
-//                    val appName = try {
-//                        val appInfo = pm.getApplicationInfo(it.packageName, 0)
-//                        pm.getApplicationLabel(appInfo).toString()
-//                    }
-//                    catch (e: Exception) {
-//                        it.packageName // fall back to package name
-//                    }
-//
-//                    ActivityEvent(
-//                        name = appName,
-//                        usedAtTimestamp = it.lastTimeUsed,
-//                        sentToApi = false
-//                    )
-//                }
-//
-//                val db = getDatabase(context)
-//                val repository = TelemetryRepository(db.activityEventDao(), ApiClient.api)
-//                val wifiService = WifiService(context)
-//
-//                Log.d("INFO", "Sent message to the API")
-//
-//                scope.launch {
-//                    TelemetryRepository(
-//                        db.activityEventDao(),
-//                        ApiClient.api
-//                    ).saveEventsToLocalDb(activityEvents)
-//                    if (wifiService.isConnectedToHomeWifi()) {
-//                        repository.sendEventsToAPI(activityEvents)
-//                    }
-//
-//                    activityEvents.forEach {
-//                        Log.d("Sending to DB/API", it.toString())
-//                    }
-//                }
-
-//            }
-
-
         },
         shape = RectangleShape,
         modifier = Modifier
