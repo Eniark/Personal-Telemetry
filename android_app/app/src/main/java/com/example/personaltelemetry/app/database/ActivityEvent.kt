@@ -14,9 +14,4 @@ data class ActivityEvent(
     val isSystemEvent: Boolean = false
 )
 
-@Entity
-data class SystemAppCollection(
-    @PrimaryKey(autoGenerate = true)
-    val packageName: String
-)
 

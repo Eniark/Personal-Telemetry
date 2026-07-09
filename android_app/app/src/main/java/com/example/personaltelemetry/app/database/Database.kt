@@ -5,13 +5,14 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [ActivityEvent::class], version = 2)
+@Database(entities = [ActivityEvent::class, SystemAppCollection::class], version = 3)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun activityEventDao(): ActivityEventDao
+    abstract fun systemAppCollectionDao(): SystemAppCollectionDao
 
     // singleton pattern:
     companion object {
-        @Volatile // guarantees that the database is instantly visible to all threads, so no other would create a 2nd database
+        @Volatile // guarantees that the database is instantly visible to all threads, so no other thread would create a 2nd database
         private var INSTANCE: AppDatabase? = null;
 
         fun getDatabase(context: Context): AppDatabase {

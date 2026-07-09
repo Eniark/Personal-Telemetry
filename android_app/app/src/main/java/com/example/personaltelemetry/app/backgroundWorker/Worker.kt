@@ -17,6 +17,7 @@ import com.example.personaltelemetry.app.repository.ApiClient
 import com.example.personaltelemetry.app.repository.GooglePlayScraper
 import com.example.personaltelemetry.app.repository.TelemetryApi
 import com.example.personaltelemetry.app.repository.TelemetryRepository
+import com.example.personaltelemetry.app.system.ConnectivityService
 import com.example.personaltelemetry.app.system.WifiService
 import kotlinx.coroutines.launch
 
@@ -29,19 +30,26 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
             var activityEvents = getMostRecentActivities()
             val db = getDatabase(applicationContext)
             val scraper = GooglePlayScraper()
-            val repository = TelemetryRepository(db.activityEventDao(), ApiClient.api, scraper)
+            val repository = TelemetryRepository(db.activityEventDao(), db.systemAppCollectionDao(), ApiClient.api, scraper)
             val wifiService = WifiService(applicationContext)
-            activityEvents = postProcessEvents(activityEvents, repository)
-            
+            val connectivityService = ConnectivityService(applicationContext)
+
+            if (connectivityService.isConnectedToNetwork()) {
+                activityEvents = postProcessEvents(activityEvents, repository)
+            }
+            val packageNames: List<String> = activityEvents.map { it.appName }
+            val systemApps = repository.getSystemApps(packageNames)
+            activityEvents = activityEvents.filter { it.appName !in systemApps }
             val (systemEvents, nonSystemEvents) = separateSystemVsNonSystemEvents(events = activityEvents)
             Log.d("INFO", "Sent message to the API")
 
-            repository.saveEventsToLocalDb(activityEvents)
+            repository.saveSystemEvents(systemEvents)
+            repository.saveEventsToLocalDb(nonSystemEvents)
             if (wifiService.isConnectedToHomeWifi()) {
-                repository.sendEventsToAPI(activityEvents)
+                repository.sendEventsToAPI(nonSystemEvents)
             }
 
-            activityEvents.forEach {
+            nonSystemEvents.forEach {
                 Log.d("Sending to DB/API", it.toString())
             }
 

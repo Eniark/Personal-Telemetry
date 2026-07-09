@@ -241,7 +241,7 @@ fun StartTrackingButton(
 //            scope.launch {
 //                db.activityEventDao().clearTable()
 //            }
-//                onToggleTracking()
+                onToggleTracking()
                 Log.d("Network",cs.isConnectedToNetwork().toString())
         },
         shape = RectangleShape,

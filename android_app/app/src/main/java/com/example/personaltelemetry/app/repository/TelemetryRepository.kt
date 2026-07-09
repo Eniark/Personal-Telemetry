@@ -1,10 +1,10 @@
 package com.example.personaltelemetry.app.repository
 
-import android.R
 import android.util.Log
 import com.example.personaltelemetry.BuildConfig
 import com.example.personaltelemetry.app.database.ActivityEvent
 import com.example.personaltelemetry.app.database.ActivityEventDao
+import com.example.personaltelemetry.app.database.SystemAppCollectionDao
 import kotlinx.coroutines.flow.Flow
 import retrofit2.Response
 import retrofit2.Retrofit
@@ -13,25 +13,34 @@ import retrofit2.http.Body
 import retrofit2.http.POST
 
 class TelemetryRepository(
-    private val dao: ActivityEventDao,
+    private val activityEventDao: ActivityEventDao,
+    private val systemAppCollectionDao: SystemAppCollectionDao,
     private val api: TelemetryApi,
     private val scraper: GooglePlayScraper
 ) {
 
-    val eventsStoredCount: Flow<Int> = dao.getStoredEventsCount();
-    val eventsSentCount: Flow<Int> = dao.getSentEventsCount();
+    val eventsStoredCount: Flow<Int> = activityEventDao.getStoredEventsCount();
+    val eventsSentCount: Flow<Int> = activityEventDao.getSentEventsCount();
     suspend fun saveEventsToLocalDb(events: List<ActivityEvent>): Unit {
-        dao.insert(events)
+        activityEventDao.insert(events)
+    }
+
+    suspend fun saveSystemEvents(systemEvents: List<ActivityEvent>): Unit {
+        systemAppCollectionDao.insertSystemApps(systemEvents)
+    }
+
+    suspend fun getSystemApps(packageNames: List<String>): Set<String> {
+        return systemAppCollectionDao.getSystemApps(packageNames).toSet()
     }
 
     suspend fun sendEventsToAPI(events: List<ActivityEvent>): Unit {
-        var pendingEvents = dao.getPending()
+        var pendingEvents = activityEventDao.getPending()
         pendingEvents = events + pendingEvents
         Log.d("pendingEvents", pendingEvents.toString())
 
         if (pendingEvents.size > 5) {
             api.sendEvents(pendingEvents)
-            dao.markAsSent(pendingEvents.map { it.id })
+            activityEventDao.markAsSent(pendingEvents.map { it.id })
         }
     }
 

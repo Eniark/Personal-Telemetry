@@ -20,6 +20,7 @@ class Main : ComponentActivity() {
         val scraper = GooglePlayScraper()
         val repository = TelemetryRepository(
             database.activityEventDao(),
+            database.systemAppCollectionDao(),
             ApiClient.api,
             scraper
         )
