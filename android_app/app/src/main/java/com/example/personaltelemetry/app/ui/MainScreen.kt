@@ -42,6 +42,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.personaltelemetry.app.backgroundWorker.CustomWorker
 import com.example.personaltelemetry.app.database.ActivityEvent
 import com.example.personaltelemetry.app.database.AppDatabase.Companion.getDatabase
+import com.example.personaltelemetry.app.system.ConnectivityService
 import com.example.personaltelemetry.app.system.PermissionsService
 import com.example.personaltelemetry.app.viewModel.TelemetryViewModel
 import kotlinx.coroutines.launch
@@ -231,15 +232,17 @@ fun StartTrackingButton(
         isTracking: Boolean,
         onToggleTracking: () -> Unit,
     ) {
-//    val context = LocalContext.current
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
 //    val db = getDatabase(context)
+    val cs = ConnectivityService(context)
     Button(
         onClick = {
 //            scope.launch {
 //                db.activityEventDao().clearTable()
 //            }
-                onToggleTracking()
+//                onToggleTracking()
+                Log.d("Network",cs.isConnectedToNetwork().toString())
         },
         shape = RectangleShape,
         modifier = Modifier

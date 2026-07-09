@@ -35,7 +35,7 @@ class TelemetryRepository(
         }
     }
 
-    suspend fun getAppInformation(packageName: String): Pair<String, String> {
+    suspend fun getAppInformation(packageName: String): Triple<String, String, Boolean> {
         return scraper.getAppInformation(packageName)
     }
 }

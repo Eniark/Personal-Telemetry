@@ -26,12 +26,14 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
         return try {
 
             Log.d("WORKER", "Running background task")
-            val activityEvents = getMostRecentActivities()
+            var activityEvents = getMostRecentActivities()
             val db = getDatabase(applicationContext)
             val scraper = GooglePlayScraper()
             val repository = TelemetryRepository(db.activityEventDao(), ApiClient.api, scraper)
             val wifiService = WifiService(applicationContext)
-
+            activityEvents = postProcessEvents(activityEvents, repository)
+            
+            val (systemEvents, nonSystemEvents) = separateSystemVsNonSystemEvents(events = activityEvents)
             Log.d("INFO", "Sent message to the API")
 
             repository.saveEventsToLocalDb(activityEvents)
@@ -51,13 +53,36 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
     }
 
 
+    fun separateSystemVsNonSystemEvents(events: List<ActivityEvent>): Pair<List<ActivityEvent>, List<ActivityEvent>> {
+        val systemEvents = events.filter { it.isSystemEvent }
+        val nonSystemEvents = events.filter { !it.isSystemEvent }
 
+        return systemEvents to nonSystemEvents
+    }
+
+
+    suspend fun postProcessEvents(events: List<ActivityEvent>, repository: TelemetryRepository): List<ActivityEvent> {
+        val postProcessedEvents = events.map {
+            val (appName, description, isSystemEvent) = repository.getAppInformation(it.appName)
+
+            ActivityEvent(
+                id = it.id,
+                appName = appName,
+                description = description,
+                usedAtTimestamp = it.usedAtTimestamp,
+                isSystemEvent = isSystemEvent
+            )
+
+        }
+
+        return postProcessedEvents
+    }
     fun getMostRecentActivities(): List<ActivityEvent> {
         val usageStatsManager =
             applicationContext.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
 
         val endTime = System.currentTimeMillis()
-        val startTime = endTime - 1000 * 60 * CustomWorker.TRACKING_WINDOW_MINUTES // last 10 minutes
+        val startTime = endTime - 1000 * 60 * TRACKING_WINDOW_MINUTES // last 10 minutes
         val stats = usageStatsManager
             .queryUsageStats(
                 UsageStatsManager.INTERVAL_DAILY,
@@ -89,9 +114,8 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
             }
 
             ActivityEvent(
-                name = appName,
-                usedAtTimestamp = it.lastTimeUsed,
-                sentToApi = false
+                appName = appName,
+                usedAtTimestamp = it.lastTimeUsed
             )
         }
 
