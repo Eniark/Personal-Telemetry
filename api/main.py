@@ -55,6 +55,10 @@ async def event(payload: list[dict]): # the phone sends batches every 15 minutes
         event_processor.handle_os_event(event)
     return {"ok": True}
 
+@app.get("/health")
+async def health():
+    return {"ok": True}
+
 
 if __name__ == "__main__":
     HOST = os.getenv("HOST")

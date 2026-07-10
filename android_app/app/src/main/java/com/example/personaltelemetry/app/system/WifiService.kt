@@ -31,13 +31,5 @@ class WifiService(
         return ssid.removeSurrounding("\"")
     }
 
-    fun isConnectedToHomeWifi(): Boolean {
-        if (!isConnectedToWifi()) return false
-
-        val homeSsid = "Bordiukov"
-
-        return getCurrentSsid() == homeSsid
-    }
-
 
 }

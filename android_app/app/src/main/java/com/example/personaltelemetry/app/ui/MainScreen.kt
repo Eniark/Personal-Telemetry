@@ -69,12 +69,7 @@ fun TelemetryApp(viewModel: TelemetryViewModel) {
     val isTracking by viewModel.isTracking.collectAsStateWithLifecycle() // tracks the state of the variable
 //    val db = getDatabase(context)
     val cs = ConnectivityService(context)
-    LaunchedEffect(Unit) {
-        Log.d(
-            "test",
-            "${isTracking}, ${viewModel.workerManager.isWorkerActive()}"
-        )
-    }
+
     DisposableEffect(lifecycleOwner) { // Tracks when app becomes active again
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {

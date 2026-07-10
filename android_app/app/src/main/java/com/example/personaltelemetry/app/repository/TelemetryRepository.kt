@@ -10,6 +10,7 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.POST
 
 class TelemetryRepository(
@@ -36,7 +37,7 @@ class TelemetryRepository(
     suspend fun sendEventsToAPI(events: List<ActivityEvent>): Unit {
         var pendingEvents = activityEventDao.getPending()
         pendingEvents = events + pendingEvents
-        Log.d("pendingEvents", pendingEvents.toString())
+        Log.d("APP-LOGS:pendingEvents", pendingEvents.toString())
 
         if (pendingEvents.size > 5) {
             api.sendEvents(pendingEvents)
@@ -47,6 +48,18 @@ class TelemetryRepository(
     suspend fun getAppInformation(packageName: String): Triple<String, String, Boolean> {
         return scraper.getAppInformation(packageName)
     }
+
+    suspend fun getAPIHealth(): Boolean {
+        return try {
+                    val response = api.isAvailable()
+                    response.isSuccessful
+                }
+                catch (e: Exception) {
+                    false
+                }
+
+    }
+
 }
 
 interface TelemetryApi {
@@ -55,6 +68,9 @@ interface TelemetryApi {
     suspend fun sendEvents( // suspend = async
         @Body events: List<ActivityEvent>
     ): Response<Unit>
+
+    @GET("health")
+    suspend fun isAvailable(): Response<Unit>
 }
 
 

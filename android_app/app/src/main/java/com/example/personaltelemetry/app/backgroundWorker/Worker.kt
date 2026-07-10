@@ -26,7 +26,6 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
     override suspend fun doWork(): Result {
         return try {
 
-            Log.d("WORKER", "Running background task")
             var activityEvents = getMostRecentActivities()
             val db = getDatabase(applicationContext)
             val scraper = GooglePlayScraper()
@@ -35,27 +34,31 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
             val connectivityService = ConnectivityService(applicationContext)
 
             if (connectivityService.isConnectedToNetwork()) {
-                activityEvents = postProcessEvents(activityEvents, repository)
+//                activityEvents = postProcessEvents(activityEvents, repository)
             }
             val packageNames: List<String> = activityEvents.map { it.appName }
+            Log.d("APP-LOGS:System-apps-db", packageNames.toString())
 
             val systemApps = repository.getSystemApps(packageNames)
+            Log.d("APP-LOGS:System-apps-db", systemApps.toString())
             activityEvents = activityEvents.filter { it.appName !in systemApps }
             val (systemEvents, nonSystemEvents) = separateSystemVsNonSystemEvents(events = activityEvents)
+            Log.d("APP-LOGS:System-events-new", systemEvents.toString())
 
             repository.saveSystemEvents(systemEvents)
             repository.saveEventsToLocalDb(nonSystemEvents)
-            if (wifiService.isConnectedToHomeWifi()) {
+            Log.d("APP-LOGS:API-Health", "Is API available? ${repository.getAPIHealth()}")
+            if (repository.getAPIHealth()) {
                 repository.sendEventsToAPI(nonSystemEvents)
             }
 
             nonSystemEvents.forEach {
-                Log.d("Sending to DB/API", it.toString())
+                Log.d("APP-LOGS: to DB/API", it.toString())
             }
 
             Result.success()
         } catch (e: Exception) {
-            Log.e("WORKER", "Failed", e)
+            Log.e("APP-LOGS:WORKER", "Failed", e)
             Result.retry()
         }
     }
