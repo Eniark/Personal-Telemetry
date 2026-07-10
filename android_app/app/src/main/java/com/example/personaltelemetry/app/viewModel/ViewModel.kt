@@ -8,15 +8,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.example.personaltelemetry.app.backgroundWorker.WorkerManager
 import com.example.personaltelemetry.app.database.ActivityEventDao
 import com.example.personaltelemetry.app.database.AppDatabase.Companion.getDatabase
 import com.example.personaltelemetry.app.repository.ApiClient
 import com.example.personaltelemetry.app.repository.TelemetryRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 class TelemetryViewModel(
     private val repository: TelemetryRepository,
-    private val workerManager: WorkerManager
+    public val workerManager: WorkerManager
 ): ViewModel()  {
 
     var hasUsageStatsPermissions by mutableStateOf(false)
@@ -26,8 +30,12 @@ class TelemetryViewModel(
     var numberOfSentEvents = repository.eventsSentCount;
     var numberOfStoredEvents = repository.eventsStoredCount;
 
-    var isTracking by mutableStateOf(workerManager.isWorkerRunning())
-        private set
+    val isTracking = MutableStateFlow(false) //
+    init { // is run only on object creation
+        viewModelScope.launch {
+            isTracking.value = workerManager.isWorkerActive()
+        }
+    }
 
     fun updateLocationPermissions(value: Boolean) {
         hasLocationPermissions = value
@@ -37,18 +45,17 @@ class TelemetryViewModel(
         hasUsageStatsPermissions = value
     }
     fun onToggleTracking() {
-        if (hasUsageStatsPermissions && hasLocationPermissions) {
-            isTracking = !isTracking
-            if (isTracking) {
-                workerManager.startTracking()
-            }
-            else {
-                workerManager.stopTracking()
-            }
+        if (!hasUsageStatsPermissions || !hasLocationPermissions) {
+            return
         }
 
-
-
+        if (isTracking.value) {
+            workerManager.stopTracking()
+            isTracking.value = false
+        } else {
+            workerManager.startTracking()
+            isTracking.value = true
+        }
     }
 
 }

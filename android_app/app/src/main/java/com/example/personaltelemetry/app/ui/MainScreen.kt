@@ -24,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.personaltelemetry.app.backgroundWorker.CustomWorker
 import com.example.personaltelemetry.app.database.ActivityEvent
 import com.example.personaltelemetry.app.database.AppDatabase.Companion.getDatabase
@@ -64,7 +66,15 @@ fun TelemetryApp(viewModel: TelemetryViewModel) {
     val permissionsService = PermissionsService(context);
     val numberOfStoredEvents by viewModel.numberOfStoredEvents.collectAsState(0);
     val numberOfSentEvents by viewModel.numberOfSentEvents.collectAsState(0);
-
+    val isTracking by viewModel.isTracking.collectAsStateWithLifecycle() // tracks the state of the variable
+//    val db = getDatabase(context)
+    val cs = ConnectivityService(context)
+    LaunchedEffect(Unit) {
+        Log.d(
+            "test",
+            "${isTracking}, ${viewModel.workerManager.isWorkerActive()}"
+        )
+    }
     DisposableEffect(lifecycleOwner) { // Tracks when app becomes active again
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -89,7 +99,7 @@ fun TelemetryApp(viewModel: TelemetryViewModel) {
             statusColor = MaterialTheme.colorScheme.warning
         }
 
-        !viewModel.isTracking -> {
+        !isTracking -> {
             statusText = "Inactive"
             statusColor = MaterialTheme.colorScheme.onError
         }
@@ -115,7 +125,7 @@ fun TelemetryApp(viewModel: TelemetryViewModel) {
         BodySection(
             viewModel.hasLocationPermissions,
             setLocationPermissions = viewModel::updateLocationPermissions,
-            isTracking = viewModel.isTracking,
+            isTracking = isTracking,
             onToggleTracking = viewModel::onToggleTracking
         )
         StatusSection(statusText, statusColor, numberOfSentEvents, numberOfStoredEvents)

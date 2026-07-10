@@ -1,10 +1,13 @@
 package com.example.personaltelemetry.app.backgroundWorker
 
 import android.content.Context
+import android.util.Log
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
 class WorkerManager (
@@ -12,13 +15,14 @@ class WorkerManager (
 ) {
     val UNIQUE_WORKER_NAME = "Personal Telemetry Worker"
 
-    fun isWorkerRunning(): Boolean {
-        val workInfos = WorkManager.getInstance(context)
-            .getWorkInfosForUniqueWork(UNIQUE_WORKER_NAME)
-            .get()
+    suspend fun isWorkerActive(): Boolean =
+        withContext(Dispatchers.IO) {
+            val workInfos = WorkManager.getInstance(context)
+                .getWorkInfosForUniqueWork(UNIQUE_WORKER_NAME)
+                .get()
 
-        return workInfos.any { it.state == WorkInfo.State.RUNNING }
-    }
+            workInfos.any { !it.state.isFinished }
+        }
 
 
     fun startTracking() {

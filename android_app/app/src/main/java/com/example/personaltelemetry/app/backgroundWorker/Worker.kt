@@ -38,10 +38,10 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
                 activityEvents = postProcessEvents(activityEvents, repository)
             }
             val packageNames: List<String> = activityEvents.map { it.appName }
+
             val systemApps = repository.getSystemApps(packageNames)
             activityEvents = activityEvents.filter { it.appName !in systemApps }
             val (systemEvents, nonSystemEvents) = separateSystemVsNonSystemEvents(events = activityEvents)
-            Log.d("INFO", "Sent message to the API")
 
             repository.saveSystemEvents(systemEvents)
             repository.saveEventsToLocalDb(nonSystemEvents)
