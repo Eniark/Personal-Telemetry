@@ -90,18 +90,18 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
             Log.d("All Events", collectedEvents.toString())
             Log.d("Enriched Events", enrichedEvents.toString())
             repository.saveEventsToLocalDb(enrichedEvents)
+            repository.removeSystemEvents() // Clean up system events
             // =============================
 
             // send events to the API
             // =============================
             val apiHealthy = repository.getAPIHealth()
 
-            // fetch events which were not sent yet
-//            val pendingEvents = repository.getPendingEvents()
-
-//            enrichedEvents += pendingEvents;
             if (apiHealthy && enrichedEvents.size > 5) {
-//                repository.sendEventsToAPI(finalEvents)
+                // fetch events which were not sent yet
+                val pendingEvents = repository.getUnsentEvents()
+                enrichedEvents += pendingEvents;
+                repository.sendEventsToAPI(enrichedEvents)
                 Log.d("APP-LOGS:SentToAPI", "${enrichedEvents.size}, $enrichedEvents")
             }
             // =============================
@@ -150,17 +150,14 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
         val appsThatRequireEnrichmentMap = enrichedApps.associateBy { it.packageName }
 
         val enrichedEvents = events
-            .filter { event ->
-                val enrichedApp = appsThatRequireEnrichmentMap[event.packageName]
-                enrichedApp?.isSystem==false
-            }
             .map { event ->
                 val enrichedApp = appsThatRequireEnrichmentMap[event.packageName]
                 if (enrichedApp != null) {
                     event.copy(
                         appName = enrichedApp.appName,
                         description = enrichedApp.description,
-                        isVerified = enrichedApp.isVerified
+                        isVerified = enrichedApp.isVerified,
+                        isSystemEvent = enrichedApp.isSystem
                     )
                 }
                 else {

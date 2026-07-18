@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [ActivityEvent::class, AndroidApps::class], version = 9)
+@Database(entities = [ActivityEvent::class, AndroidApps::class], version = 10)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun activityEventDao(): ActivityEventDao
     abstract fun androidAppsDao(): AndroidAppsDao

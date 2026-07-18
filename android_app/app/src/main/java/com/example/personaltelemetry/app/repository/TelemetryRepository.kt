@@ -24,11 +24,15 @@ class TelemetryRepository(
     val eventsStoredCount: Flow<Int> = activityEventDao.getStoredEventsCount();
     val eventsSentCount: Flow<Int> = activityEventDao.getSentEventsCount();
     suspend fun saveEventsToLocalDb(events: List<ActivityEvent>): Unit {
-        activityEventDao.insert(events)
+        activityEventDao.upsert(events)
     }
 
     suspend fun getUnverifiedEvents(): List<ActivityEvent> {
         return activityEventDao.getUnverifiedEvents()
+    }
+
+    suspend fun getUnsentEvents(): List<ActivityEvent> {
+        return activityEventDao.getUnsentEvents()
     }
 
     suspend fun saveAndroidAppsToLocalDb(apps: List<AndroidApps>): Unit {
@@ -48,6 +52,10 @@ class TelemetryRepository(
     suspend fun getAppInformation(packageName: String): Triple<String, String, Boolean> {
         return scraper.getAppInformation(packageName)
     }
+    suspend fun removeSystemEvents(): Unit {
+        activityEventDao.removeSystemEvents()
+    }
+
 
     suspend fun getAPIHealth(): Boolean {
         return try {
