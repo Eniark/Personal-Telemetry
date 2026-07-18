@@ -1,10 +1,8 @@
 package com.example.personaltelemetry.app.ui
 
 import android.Manifest
-import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ApplicationInfo
 import android.provider.Settings
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -24,7 +22,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -41,13 +38,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.personaltelemetry.app.backgroundWorker.CustomWorker
-import com.example.personaltelemetry.app.database.ActivityEvent
-import com.example.personaltelemetry.app.database.AppDatabase.Companion.getDatabase
 import com.example.personaltelemetry.app.system.ConnectivityService
 import com.example.personaltelemetry.app.system.PermissionsService
 import com.example.personaltelemetry.app.viewModel.TelemetryViewModel
-import kotlinx.coroutines.launch
 
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {

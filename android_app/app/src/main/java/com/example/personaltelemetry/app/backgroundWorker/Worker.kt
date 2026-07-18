@@ -4,24 +4,15 @@ import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import android.app.AppOpsManager
 import android.app.usage.UsageStatsManager
 import android.content.pm.ApplicationInfo
-import android.os.Process
-import androidx.room.Room
-import androidx.work.WorkManager
 import com.example.personaltelemetry.app.database.ActivityEvent
 import com.example.personaltelemetry.app.database.AndroidApps
-import com.example.personaltelemetry.app.database.AppDatabase
 import com.example.personaltelemetry.app.database.AppDatabase.Companion.getDatabase
 import com.example.personaltelemetry.app.repository.ApiClient
 import com.example.personaltelemetry.app.repository.GooglePlayScraper
-import com.example.personaltelemetry.app.repository.TelemetryApi
 import com.example.personaltelemetry.app.repository.TelemetryRepository
 import com.example.personaltelemetry.app.system.ConnectivityService
-import com.example.personaltelemetry.app.system.WifiService
-import kotlinx.coroutines.launch
-import kotlin.collections.get
 
 class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) { // Android can run this piece of code in the background asynchronously
 

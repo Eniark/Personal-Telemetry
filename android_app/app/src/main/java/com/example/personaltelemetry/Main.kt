@@ -1,11 +1,9 @@
 package com.example.personaltelemetry
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.lifecycle.lifecycleScope
 import com.example.personaltelemetry.app.backgroundWorker.WorkerManager
 import com.example.personaltelemetry.app.database.AppDatabase.Companion.getDatabase
 import com.example.personaltelemetry.app.repository.ApiClient
@@ -15,9 +13,6 @@ import com.example.personaltelemetry.app.ui.AppTheme
 import com.example.personaltelemetry.app.ui.TelemetryApp
 import com.example.personaltelemetry.app.viewModel.TelemetryViewModel
 import com.example.personaltelemetry.app.viewModel.TelemetryViewModelFactory
-import kotlinx.coroutines.launch
-import kotlin.coroutines.coroutineContext
-import kotlin.math.log
 
 class Main : ComponentActivity() {
     private val viewModel: TelemetryViewModel by viewModels {
@@ -29,10 +24,10 @@ class Main : ComponentActivity() {
             ApiClient.api,
             scraper
         )
-        lifecycleScope.launch {
-            database.activityEventDao().clearTable()
-            database.androidAppsDao().clearTable()
-        }
+//        lifecycleScope.launch {
+//            database.activityEventDao().clearTable()
+//            database.androidAppsDao().clearTable()
+//        }
         val workerManager = WorkerManager(applicationContext)
         TelemetryViewModelFactory(workerManager, repository)
     }

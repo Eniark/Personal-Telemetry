@@ -1,13 +1,9 @@
 package com.example.personaltelemetry.app.system
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.util.Log
-import androidx.core.content.ContextCompat
 
 class WifiService(
     private val context: Context
