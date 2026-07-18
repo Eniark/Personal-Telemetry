@@ -1,4 +1,4 @@
-package com.example.personaltelemetry.app.ui
+package com.yhulivatiy.personaltelemetry.app.ui
 
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.lightColorScheme

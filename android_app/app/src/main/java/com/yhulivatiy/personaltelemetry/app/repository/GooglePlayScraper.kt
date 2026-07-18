@@ -1,4 +1,4 @@
-package com.example.personaltelemetry.app.repository
+package com.yhulivatiy.personaltelemetry.app.repository
 
 import android.util.Log
 import kotlinx.coroutines.Dispatchers

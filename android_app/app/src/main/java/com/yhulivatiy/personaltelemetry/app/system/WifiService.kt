@@ -1,4 +1,4 @@
-package com.example.personaltelemetry.app.system
+package com.yhulivatiy.personaltelemetry.app.system
 
 import android.content.Context
 import android.net.wifi.WifiManager

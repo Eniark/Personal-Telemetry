@@ -1,4 +1,4 @@
-package com.example.personaltelemetry.app.ui
+package com.yhulivatiy.personaltelemetry.app.ui
 
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle

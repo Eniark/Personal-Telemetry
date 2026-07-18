@@ -1,18 +1,18 @@
-package com.example.personaltelemetry
+package com.yhulivatiy.personaltelemetry
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import com.example.personaltelemetry.app.backgroundWorker.WorkerManager
-import com.example.personaltelemetry.app.database.AppDatabase.Companion.getDatabase
-import com.example.personaltelemetry.app.repository.ApiClient
-import com.example.personaltelemetry.app.repository.GooglePlayScraper
-import com.example.personaltelemetry.app.repository.TelemetryRepository
-import com.example.personaltelemetry.app.ui.AppTheme
-import com.example.personaltelemetry.app.ui.TelemetryApp
-import com.example.personaltelemetry.app.viewModel.TelemetryViewModel
-import com.example.personaltelemetry.app.viewModel.TelemetryViewModelFactory
+import com.yhulivatiy.personaltelemetry.app.backgroundWorker.WorkerManager
+import com.yhulivatiy.personaltelemetry.app.database.AppDatabase.Companion.getDatabase
+import com.yhulivatiy.personaltelemetry.app.repository.ApiClient
+import com.yhulivatiy.personaltelemetry.app.repository.GooglePlayScraper
+import com.yhulivatiy.personaltelemetry.app.repository.TelemetryRepository
+import com.yhulivatiy.personaltelemetry.app.ui.AppTheme
+import com.yhulivatiy.personaltelemetry.app.ui.TelemetryApp
+import com.yhulivatiy.personaltelemetry.app.viewModel.TelemetryViewModel
+import com.yhulivatiy.personaltelemetry.app.viewModel.TelemetryViewModelFactory
 
 class Main : ComponentActivity() {
     private val viewModel: TelemetryViewModel by viewModels {

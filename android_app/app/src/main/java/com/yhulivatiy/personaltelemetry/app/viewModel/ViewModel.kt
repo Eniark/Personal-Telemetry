@@ -1,4 +1,4 @@
-package com.example.personaltelemetry.app.viewModel
+package com.yhulivatiy.personaltelemetry.app.viewModel
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -6,8 +6,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.personaltelemetry.app.backgroundWorker.WorkerManager
-import com.example.personaltelemetry.app.repository.TelemetryRepository
+import com.yhulivatiy.personaltelemetry.app.backgroundWorker.WorkerManager
+import com.yhulivatiy.personaltelemetry.app.repository.TelemetryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 

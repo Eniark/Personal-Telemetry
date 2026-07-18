@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.personaltelemetry"
+    namespace = "com.yhulivatiy.personaltelemetry"
     compileSdk {
         version = release(37)
     }

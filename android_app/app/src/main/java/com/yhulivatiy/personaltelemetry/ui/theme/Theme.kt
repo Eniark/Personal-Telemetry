@@ -1,4 +1,4 @@
-package com.example.personaltelemetry.ui.theme
+package com.yhulivatiy.personaltelemetry.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme

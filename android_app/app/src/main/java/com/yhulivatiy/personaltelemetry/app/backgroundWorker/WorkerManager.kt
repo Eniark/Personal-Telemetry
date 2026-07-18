@@ -1,4 +1,4 @@
-package com.example.personaltelemetry.app.backgroundWorker
+package com.yhulivatiy.personaltelemetry.app.backgroundWorker
 
 import android.content.Context
 import android.util.Log

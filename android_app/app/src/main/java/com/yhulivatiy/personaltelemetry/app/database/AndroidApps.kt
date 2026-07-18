@@ -1,4 +1,4 @@
-package com.example.personaltelemetry.app.database
+package com.yhulivatiy.personaltelemetry.app.database
 
 import androidx.room.Entity
 import androidx.room.Index

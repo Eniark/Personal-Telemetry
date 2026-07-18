@@ -1,11 +1,11 @@
-package com.example.personaltelemetry.app.repository
+package com.yhulivatiy.personaltelemetry.app.repository
 
 import android.util.Log
-import com.example.personaltelemetry.BuildConfig
-import com.example.personaltelemetry.app.database.ActivityEvent
-import com.example.personaltelemetry.app.database.ActivityEventDao
-import com.example.personaltelemetry.app.database.AndroidApps
-import com.example.personaltelemetry.app.database.AndroidAppsDao
+import com.yhulivatiy.personaltelemetry.BuildConfig
+import com.yhulivatiy.personaltelemetry.app.database.ActivityEvent
+import com.yhulivatiy.personaltelemetry.app.database.ActivityEventDao
+import com.yhulivatiy.personaltelemetry.app.database.AndroidApps
+import com.yhulivatiy.personaltelemetry.app.database.AndroidAppsDao
 import kotlinx.coroutines.flow.Flow
 import retrofit2.Response
 import retrofit2.Retrofit

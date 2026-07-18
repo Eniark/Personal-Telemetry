@@ -1,4 +1,4 @@
-package com.example.personaltelemetry.app.ui
+package com.yhulivatiy.personaltelemetry.app.ui
 
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp

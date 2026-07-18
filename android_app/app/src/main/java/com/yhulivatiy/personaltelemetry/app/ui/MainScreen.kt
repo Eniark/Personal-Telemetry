@@ -1,4 +1,4 @@
-package com.example.personaltelemetry.app.ui
+package com.yhulivatiy.personaltelemetry.app.ui
 
 import android.Manifest
 import android.content.Context
@@ -38,9 +38,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.personaltelemetry.app.system.ConnectivityService
-import com.example.personaltelemetry.app.system.PermissionsService
-import com.example.personaltelemetry.app.viewModel.TelemetryViewModel
+import com.yhulivatiy.personaltelemetry.app.system.ConnectivityService
+import com.yhulivatiy.personaltelemetry.app.system.PermissionsService
+import com.yhulivatiy.personaltelemetry.app.viewModel.TelemetryViewModel
 
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {
