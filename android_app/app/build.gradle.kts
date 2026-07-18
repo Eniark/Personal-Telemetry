@@ -11,7 +11,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.personaltelemetry"
+        applicationId = "com.yhulivatiy.personaltelemetry"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
