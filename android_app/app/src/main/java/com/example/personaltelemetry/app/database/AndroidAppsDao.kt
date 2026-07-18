@@ -1,16 +1,19 @@
 package com.example.personaltelemetry.app.database
 
-import android.text.BoringLayout
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Upsert
 
 @Dao
 interface AndroidAppsDao {
 
-    @Query("SELECT * FROM AndroidApps WHERE packageName IN (:packageNames) AND isSystem=:isSystem")
-    suspend fun getAndroidApps(packageNames: List<String>, isSystem: Boolean): List<AndroidApps>
+    @Query("SELECT * FROM AndroidApps") // I do not expect there to be many apps, hence doing a full scan
+    suspend fun getApps(): List<AndroidApps>
 
-    @Insert
-    suspend fun insertAndroidApps(systemEvents: List<ActivityEvent>)
+    @Upsert
+    suspend fun upsertApps(systemEvents: List<AndroidApps>)
+
+    @Query("DELETE FROM AndroidApps")
+    suspend fun clearTable();
 }

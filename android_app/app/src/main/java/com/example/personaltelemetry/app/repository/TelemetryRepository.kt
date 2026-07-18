@@ -4,7 +4,8 @@ import android.util.Log
 import com.example.personaltelemetry.BuildConfig
 import com.example.personaltelemetry.app.database.ActivityEvent
 import com.example.personaltelemetry.app.database.ActivityEventDao
-import com.example.personaltelemetry.app.database.SystemAppCollectionDao
+import com.example.personaltelemetry.app.database.AndroidApps
+import com.example.personaltelemetry.app.database.AndroidAppsDao
 import kotlinx.coroutines.flow.Flow
 import retrofit2.Response
 import retrofit2.Retrofit
@@ -15,7 +16,7 @@ import retrofit2.http.POST
 
 class TelemetryRepository(
     private val activityEventDao: ActivityEventDao,
-    private val systemAppCollectionDao: SystemAppCollectionDao,
+    private val AndroidAppsDao: AndroidAppsDao,
     private val api: TelemetryApi,
     private val scraper: GooglePlayScraper
 ) {
@@ -26,23 +27,22 @@ class TelemetryRepository(
         activityEventDao.insert(events)
     }
 
-    suspend fun saveSystemEvents(systemEvents: List<ActivityEvent>): Unit {
-        systemAppCollectionDao.insertSystemApps(systemEvents)
+    suspend fun getUnverifiedEvents(): List<ActivityEvent> {
+        return activityEventDao.getUnverifiedEvents()
     }
 
-    suspend fun getSystemApps(packageNames: List<String>): Set<String> {
-        return systemAppCollectionDao.getSystemApps(packageNames).toSet()
+    suspend fun saveAndroidAppsToLocalDb(apps: List<AndroidApps>): Unit {
+        AndroidAppsDao.upsertApps(apps)
     }
+
+    suspend fun getAndroidApps(): List<AndroidApps> {
+        return AndroidAppsDao.getApps()
+    }
+
 
     suspend fun sendEventsToAPI(events: List<ActivityEvent>): Unit {
-        var pendingEvents = activityEventDao.getPending()
-        pendingEvents = events + pendingEvents
-        Log.d("APP-LOGS:pendingEvents", pendingEvents.toString())
-
-        if (pendingEvents.size > 5) {
-            api.sendEvents(pendingEvents)
-            activityEventDao.markAsSent(pendingEvents.map { it.id })
-        }
+        api.sendEvents(events)
+        activityEventDao.markAsSent(events.map { it.id })
     }
 
     suspend fun getAppInformation(packageName: String): Triple<String, String, Boolean> {
@@ -52,9 +52,11 @@ class TelemetryRepository(
     suspend fun getAPIHealth(): Boolean {
         return try {
                     val response = api.isAvailable()
+                    Log.d("APP-LOGS:API-Health", response.toString())
                     response.isSuccessful
                 }
                 catch (e: Exception) {
+                    Log.e("APP-LOGS:API-Health", e.toString())
                     false
                 }
 

@@ -29,8 +29,8 @@ class GooglePlayScraper {
             isSystem = false
         } catch (e: HttpStatusException)
         {
-            if (e.statusCode == 404) {
-                appName = packageName
+            if (e.statusCode == 404 || e.statusCode == -1) {
+//                appName = packageName
                 isSystem = true
             }
             Log.e("SCRAPER", "Failed", e)

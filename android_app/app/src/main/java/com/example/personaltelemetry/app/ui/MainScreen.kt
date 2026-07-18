@@ -68,7 +68,7 @@ fun TelemetryApp(viewModel: TelemetryViewModel) {
     val numberOfSentEvents by viewModel.numberOfSentEvents.collectAsState(0);
     val isTracking by viewModel.isTracking.collectAsStateWithLifecycle() // tracks the state of the variable
 //    val db = getDatabase(context)
-    val cs = ConnectivityService(context)
+//    val cs = ConnectivityService(context)
 
     DisposableEffect(lifecycleOwner) { // Tracks when app becomes active again
         val observer = LifecycleEventObserver { _, event ->

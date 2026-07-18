@@ -1,21 +1,14 @@
 package com.example.personaltelemetry.app.viewModel
 
-import android.content.Context
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.personaltelemetry.app.backgroundWorker.WorkerManager
-import com.example.personaltelemetry.app.database.ActivityEventDao
-import com.example.personaltelemetry.app.database.AppDatabase.Companion.getDatabase
-import com.example.personaltelemetry.app.repository.ApiClient
 import com.example.personaltelemetry.app.repository.TelemetryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class TelemetryViewModel(

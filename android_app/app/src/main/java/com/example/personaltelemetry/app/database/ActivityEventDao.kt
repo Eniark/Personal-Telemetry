@@ -11,8 +11,8 @@ interface ActivityEventDao {
     @Insert
     suspend fun insert(events: List<ActivityEvent>)
 
-    @Query("SELECT * FROM ActivityEvent WHERE sentToApi = 0")
-    suspend fun getPending(): List<ActivityEvent>
+    @Query("SELECT * FROM ActivityEvent WHERE isVerified=0")
+    suspend fun getUnverifiedEvents(): List<ActivityEvent>
 
     @Query("UPDATE ActivityEvent SET sentToApi = 1 WHERE id in (:ids)")
     suspend fun markAsSent(ids: List<Long>)

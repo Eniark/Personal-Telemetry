@@ -5,10 +5,10 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [ActivityEvent::class, SystemAppCollection::class], version = 3)
+@Database(entities = [ActivityEvent::class, AndroidApps::class], version = 9)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun activityEventDao(): ActivityEventDao
-    abstract fun systemAppCollectionDao(): SystemAppCollectionDao
+    abstract fun androidAppsDao(): AndroidAppsDao
 
     // singleton pattern:
     companion object {

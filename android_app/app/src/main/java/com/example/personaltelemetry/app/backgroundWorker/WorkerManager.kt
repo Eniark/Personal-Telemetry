@@ -3,6 +3,8 @@ package com.example.personaltelemetry.app.backgroundWorker
 import android.content.Context
 import android.util.Log
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
@@ -20,20 +22,26 @@ class WorkerManager (
             val workInfos = WorkManager.getInstance(context)
                 .getWorkInfosForUniqueWork(UNIQUE_WORKER_NAME)
                 .get()
+            Log.d("APP-Logs:Worker", "${workInfos.size}, ${workInfos.toString()}")
 
             workInfos.any { !it.state.isFinished }
         }
 
 
     fun startTracking() {
-        val request = PeriodicWorkRequestBuilder<CustomWorker>(
-            CustomWorker.TRACKING_WINDOW_MINUTES, TimeUnit.MINUTES
+//        val request = PeriodicWorkRequestBuilder<CustomWorker>(
+//            CustomWorker.TRACKING_WINDOW_MINUTES, TimeUnit.MINUTES
+//        )
+//        .build()
+
+        val request = OneTimeWorkRequestBuilder<CustomWorker>(
         )
             .build()
+        WorkManager.getInstance(context).enqueueUniqueWork(UNIQUE_WORKER_NAME, ExistingWorkPolicy.REPLACE, request)
 
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork(UNIQUE_WORKER_NAME,
-            ExistingPeriodicWorkPolicy.UPDATE,
-            request)
+//        WorkManager.getInstance(context).enqueueUniquePeriodicWork(UNIQUE_WORKER_NAME,
+//            ExistingPeriodicWorkPolicy.UPDATE,
+//            request)
     }
 
     fun stopTracking() {

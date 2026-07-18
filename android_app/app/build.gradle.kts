@@ -30,7 +30,7 @@ android {
             buildConfigField(
                 "String",
                 "API_BASE_URL",
-                "\"http://192.168.0.102:8000/\""
+                "\"http://192.168.0.103:8000/\""
             )
         }
         release {

@@ -11,6 +11,7 @@ import android.os.Process
 import androidx.room.Room
 import androidx.work.WorkManager
 import com.example.personaltelemetry.app.database.ActivityEvent
+import com.example.personaltelemetry.app.database.AndroidApps
 import com.example.personaltelemetry.app.database.AppDatabase
 import com.example.personaltelemetry.app.database.AppDatabase.Companion.getDatabase
 import com.example.personaltelemetry.app.repository.ApiClient
@@ -20,42 +21,94 @@ import com.example.personaltelemetry.app.repository.TelemetryRepository
 import com.example.personaltelemetry.app.system.ConnectivityService
 import com.example.personaltelemetry.app.system.WifiService
 import kotlinx.coroutines.launch
+import kotlin.collections.get
 
 class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) { // Android can run this piece of code in the background asynchronously
 
     override suspend fun doWork(): Result {
         return try {
 
-            var activityEvents = getMostRecentActivities()
+            Log.d("APP-LOGS:WORKER", "===WORKER STARTING===")
             val db = getDatabase(applicationContext)
-            val scraper = GooglePlayScraper()
-            val repository = TelemetryRepository(db.activityEventDao(), db.systemAppCollectionDao(), ApiClient.api, scraper)
-            val wifiService = WifiService(applicationContext)
+            val repository = TelemetryRepository(
+                db.activityEventDao(),
+                db.androidAppsDao(),
+                ApiClient.api,
+                GooglePlayScraper()
+            )
+
             val connectivityService = ConnectivityService(applicationContext)
+            var collectedEvents = getMostRecentActivities()
 
+            var allApps = repository.getAndroidApps()
+            // fetch events which were not enriched yet
+            val unverifiedEvents = repository.getUnverifiedEvents()
+
+            val verifiedSystemPackages = allApps
+                .filter { it.isVerified && it.isSystem }
+                .map { it.packageName }
+                .toSet()
+            val nonSystemEvents = collectedEvents.filter { it.packageName !in verifiedSystemPackages }
+            // Load known apps from local DB
+            val knownAppsMap = allApps.associateBy { it.packageName }
+
+            var (knownEvents, newEvents) = splitIntoKnownAndUnknown(knownAppsMap, nonSystemEvents)
+            var newApps = newEvents.map {
+                AndroidApps(
+                    packageName = it.packageName,
+                    appName = it.appName,
+                    description = it.description,
+                    isSystem = false,
+                    isVerified = false
+                )
+            }.distinct()
+            val unverifiedApps = allApps.filter { !it.isVerified }
+            val verifiedApps = allApps.filter { it.isVerified }
+            val appsThatRequireEnrichment = (newApps + unverifiedApps).distinct() // add apps from the database
+            val eventsThatRequireEnrichment = newEvents + unverifiedEvents
+            var enrichedEvents = listOf<ActivityEvent>();
+            var enrichedApps = listOf<AndroidApps>();
+
+            // Scrape metadata for unknown apps
             if (connectivityService.isConnectedToNetwork()) {
-//                activityEvents = postProcessEvents(activityEvents, repository)
+                enrichedApps = enrichApps(
+                    appsThatRequireEnrichment,
+                    repository
+                )
             }
-            val packageNames: List<String> = activityEvents.map { it.appName }
-            Log.d("APP-LOGS:System-apps-db", packageNames.toString())
-
-            val systemApps = repository.getSystemApps(packageNames)
-            Log.d("APP-LOGS:System-apps-db", systemApps.toString())
-            activityEvents = activityEvents.filter { it.appName !in systemApps }
-            val (systemEvents, nonSystemEvents) = separateSystemVsNonSystemEvents(events = activityEvents)
-            Log.d("APP-LOGS:System-events-new", systemEvents.toString())
-
-            repository.saveSystemEvents(systemEvents)
-            repository.saveEventsToLocalDb(nonSystemEvents)
-            Log.d("APP-LOGS:API-Health", "Is API available? ${repository.getAPIHealth()}")
-            if (repository.getAPIHealth()) {
-                repository.sendEventsToAPI(nonSystemEvents)
+            else {
+                enrichedApps = appsThatRequireEnrichment
             }
+            allApps = verifiedApps + enrichedApps // reassemble all apps collection
+            collectedEvents = knownEvents + eventsThatRequireEnrichment // reassemble all collected events collection
+            enrichedEvents = enrichEvents(collectedEvents, allApps) // pass all collected events to enrich them
+            repository.saveAndroidAppsToLocalDb(enrichedApps)
 
-            nonSystemEvents.forEach {
-                Log.d("APP-LOGS: to DB/API", it.toString())
+            // send events to the DB
+            // =============================
+            Log.d("All Apps", allApps.toString())
+            Log.d("All Events", collectedEvents.toString())
+            Log.d("Enriched Events", enrichedEvents.toString())
+            repository.saveEventsToLocalDb(enrichedEvents)
+            // =============================
+
+            // send events to the API
+            // =============================
+            val apiHealthy = repository.getAPIHealth()
+
+            // fetch events which were not sent yet
+//            val pendingEvents = repository.getPendingEvents()
+
+//            enrichedEvents += pendingEvents;
+            if (apiHealthy && enrichedEvents.size > 5) {
+//                repository.sendEventsToAPI(finalEvents)
+                Log.d("APP-LOGS:SentToAPI", "${enrichedEvents.size}, $enrichedEvents")
             }
+            // =============================
 
+
+
+            Log.d("APP-LOGS:WORKER", "===WORKER SUCCESSFULY FINISHED===")
             Result.success()
         } catch (e: Exception) {
             Log.e("APP-LOGS:WORKER", "Failed", e)
@@ -63,30 +116,59 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
         }
     }
 
+    fun splitIntoKnownAndUnknown(knownAppsMap: Map<String, AndroidApps>, nonSystemEvents: List<ActivityEvent>): Pair<List<ActivityEvent>, List<ActivityEvent>> {
+        val knownPackages = knownAppsMap.keys
+        // Split events into known and new
+        // =======================
+        var newEvents = nonSystemEvents.filter {
+            it.packageName !in knownPackages
+        }
 
-    fun separateSystemVsNonSystemEvents(events: List<ActivityEvent>): Pair<List<ActivityEvent>, List<ActivityEvent>> {
-        val systemEvents = events.filter { it.isSystemEvent }
-        val nonSystemEvents = events.filter { !it.isSystemEvent }
-
-        return systemEvents to nonSystemEvents
+        val knownEvents = nonSystemEvents.filter {
+            it.packageName !in newEvents.map { unknown -> unknown.packageName }
+        }
+        // =======================
+        return knownEvents to newEvents
     }
 
+    suspend fun enrichApps(apps: List<AndroidApps>, repository: TelemetryRepository): List<AndroidApps> {
+        val enrichedApps = apps.map {
+            val (appName, description, isSystemEvent) = repository.getAppInformation(it.packageName)
 
-    suspend fun postProcessEvents(events: List<ActivityEvent>, repository: TelemetryRepository): List<ActivityEvent> {
-        val postProcessedEvents = events.map {
-            val (appName, description, isSystemEvent) = repository.getAppInformation(it.appName)
-
-            ActivityEvent(
-                id = it.id,
+            it.copy(
                 appName = appName,
                 description = description,
-                usedAtTimestamp = it.usedAtTimestamp,
-                isSystemEvent = isSystemEvent
+                isVerified = true,
+                isSystem = isSystemEvent
             )
 
         }
+        return enrichedApps
 
-        return postProcessedEvents
+    }
+    suspend fun enrichEvents(events: List<ActivityEvent>, enrichedApps: List<AndroidApps>): List<ActivityEvent> {
+        val appsThatRequireEnrichmentMap = enrichedApps.associateBy { it.packageName }
+
+        val enrichedEvents = events
+            .filter { event ->
+                val enrichedApp = appsThatRequireEnrichmentMap[event.packageName]
+                enrichedApp?.isSystem==false
+            }
+            .map { event ->
+                val enrichedApp = appsThatRequireEnrichmentMap[event.packageName]
+                if (enrichedApp != null) {
+                    event.copy(
+                        appName = enrichedApp.appName,
+                        description = enrichedApp.description,
+                        isVerified = enrichedApp.isVerified
+                    )
+                }
+                else {
+                    event
+                }
+            }
+
+        return enrichedEvents
     }
     fun getMostRecentActivities(): List<ActivityEvent> {
         val usageStatsManager =
@@ -121,11 +203,12 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
                 pm.getApplicationLabel(appInfo).toString()
             }
             catch (e: Exception) {
-                it.packageName // fall back to package name
+                null
             }
 
             ActivityEvent(
                 appName = appName,
+                packageName = it.packageName,
                 usedAtTimestamp = it.lastTimeUsed
             )
         }
