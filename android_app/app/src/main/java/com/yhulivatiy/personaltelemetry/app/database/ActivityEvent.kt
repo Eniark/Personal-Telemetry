@@ -9,7 +9,7 @@ data class ActivityEvent(
     val packageName: String,
     val appName: String?,
     val description: String? = null,
-    val usedAtTimestamp: Long,
+    val event_time: Long,
     val sentToApi: Boolean = false,
     val isVerified: Boolean = false,
     val isSystemEvent: Boolean = false

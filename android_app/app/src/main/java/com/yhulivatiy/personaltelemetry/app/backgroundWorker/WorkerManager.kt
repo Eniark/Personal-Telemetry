@@ -2,11 +2,14 @@ package com.yhulivatiy.personaltelemetry.app.backgroundWorker
 
 import android.content.Context
 import android.util.Log
+import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.concurrent.TimeUnit
 
 class WorkerManager (
     private val context: Context
@@ -25,19 +28,20 @@ class WorkerManager (
 
 
     fun startTracking() {
-//        val request = PeriodicWorkRequestBuilder<CustomWorker>(
-//            CustomWorker.TRACKING_WINDOW_MINUTES, TimeUnit.MINUTES
-//        )
-//        .build()
-
-        val request = OneTimeWorkRequestBuilder<CustomWorker>(
+        val request = PeriodicWorkRequestBuilder<CustomWorker>(
+            CustomWorker.TRACKING_WINDOW_MINUTES, TimeUnit.MINUTES
         )
-            .build()
-        WorkManager.getInstance(context).enqueueUniqueWork(UNIQUE_WORKER_NAME, ExistingWorkPolicy.REPLACE, request)
+        .build()
 
-//        WorkManager.getInstance(context).enqueueUniquePeriodicWork(UNIQUE_WORKER_NAME,
-//            ExistingPeriodicWorkPolicy.UPDATE,
-//            request)
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(UNIQUE_WORKER_NAME,
+            ExistingPeriodicWorkPolicy.UPDATE,
+            request)
+
+
+//        val request = OneTimeWorkRequestBuilder<CustomWorker>(
+//        )
+//            .build()
+//        WorkManager.getInstance(context).enqueueUniqueWork(UNIQUE_WORKER_NAME, ExistingWorkPolicy.REPLACE, request)
     }
 
     fun stopTracking() {

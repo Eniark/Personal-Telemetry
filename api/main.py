@@ -21,13 +21,13 @@ event_processor = EventProcessor(db)
 
 @app.post("/browser_event")
 async def event(payload: dict):
-    started_at = datetime.datetime.fromtimestamp(
-            payload.get('started_at') / 1000
+    event_time = datetime.datetime.fromtimestamp(
+            payload.get('event_time') / 1000
         ).strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION] # Converts Unix-style timetamp to human-readable format 
 
     event = BrowserEvent(
         os_event_id=event_processor.os_activity_last_row_id,
-        started_at=started_at,
+        event_time=event_time,
         ended_at=payload.get("ended_at"),
         website = payload.get("website"),
         website_title = payload.get("title")
@@ -40,8 +40,10 @@ async def event(payload: dict):
     ended_at = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
     event = OperatingSystemEvent(
         process=payload.get("process"),
-        started_at=payload.get("started_at"),
+        event_time=payload.get("event_time"),
         ended_at=ended_at,
+        category=payload.get("category"),
+        publisher=payload.get("publisher"),
         type="PC"
     )
     event_processor.handle_os_event(event)

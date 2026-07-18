@@ -10,7 +10,7 @@ cursor.execute(
     CREATE TABLE IF NOT EXISTS os_activity (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         window TEXT,
-        started_at INTEGER,
+        event_time INTEGER,
         type TEXT
     )
     """)
@@ -21,7 +21,7 @@ cursor.execute(
     CREATE TABLE IF NOT EXISTS browser_activity (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         website TEXT,
-        started_at INTEGER,
+        event_time INTEGER,
         ended_at INTEGER,
         duration_ms INTEGER,
         activity_id INTEGER,

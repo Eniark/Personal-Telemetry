@@ -10,7 +10,7 @@ DB_NAME = "activity.db"
 DB_PATH = PROJECT_ROOT / "db" / DB_NAME
 
 # Data Format Settings
-TIMESTAMP_FORMAT = "%H:%M:%S.%f"
+TIMESTAMP_FORMAT = "%d-%m-%y %H:%M:%S.%f"
 TIMESTAMP_MS_PRECISION = 3
 
 if TIMESTAMP_MS_PRECISION is not None:

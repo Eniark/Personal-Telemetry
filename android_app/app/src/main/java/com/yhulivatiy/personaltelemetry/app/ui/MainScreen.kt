@@ -60,8 +60,6 @@ fun TelemetryApp(viewModel: TelemetryViewModel) {
     val numberOfStoredEvents by viewModel.numberOfStoredEvents.collectAsState(0);
     val numberOfSentEvents by viewModel.numberOfSentEvents.collectAsState(0);
     val isTracking by viewModel.isTracking.collectAsStateWithLifecycle() // tracks the state of the variable
-//    val db = getDatabase(context)
-//    val cs = ConnectivityService(context)
 
     DisposableEffect(lifecycleOwner) { // Tracks when app becomes active again
         val observer = LifecycleEventObserver { _, event ->
@@ -236,11 +234,7 @@ fun StartTrackingButton(
     val cs = ConnectivityService(context)
     Button(
         onClick = {
-//            scope.launch {
-//                db.activityEventDao().clearTable()
-//            }
                 onToggleTracking()
-                Log.d("Network",cs.isConnectedToNetwork().toString())
         },
         shape = RectangleShape,
         modifier = Modifier

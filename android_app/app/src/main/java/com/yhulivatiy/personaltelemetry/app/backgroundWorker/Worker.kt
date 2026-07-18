@@ -87,11 +87,12 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
             // send events to the API
             // =============================
             val apiHealthy = repository.getAPIHealth()
+            // fetch events which were not sent yet
+            val pendingEvents = repository.getUnsentEvents()
+            enrichedEvents += pendingEvents;
 
+            Log.d("APP-LOGS:SentToAPI", "$apiHealthy, ${enrichedEvents.size > 5}")
             if (apiHealthy && enrichedEvents.size > 5) {
-                // fetch events which were not sent yet
-                val pendingEvents = repository.getUnsentEvents()
-                enrichedEvents += pendingEvents;
                 repository.sendEventsToAPI(enrichedEvents)
                 Log.d("APP-LOGS:SentToAPI", "${enrichedEvents.size}, $enrichedEvents")
             }
@@ -99,7 +100,7 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
 
 
 
-            Log.d("APP-LOGS:WORKER", "===WORKER SUCCESSFULY FINISHED===")
+            Log.d("APP-LOGS:WORKER", "===WORKER SUCCESSFULLY FINISHED===")
             Result.success()
         } catch (e: Exception) {
             Log.e("APP-LOGS:WORKER", "Failed", e)
@@ -109,16 +110,12 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
 
     fun splitIntoKnownAndUnknown(knownAppsMap: Map<String, AndroidApps>, nonSystemEvents: List<ActivityEvent>): Pair<List<ActivityEvent>, List<ActivityEvent>> {
         val knownPackages = knownAppsMap.keys
-        // Split events into known and new
-        // =======================
-        var newEvents = nonSystemEvents.filter {
+        val newEvents = nonSystemEvents.filter {
             it.packageName !in knownPackages
         }
-
         val knownEvents = nonSystemEvents.filter {
             it.packageName !in newEvents.map { unknown -> unknown.packageName }
         }
-        // =======================
         return knownEvents to newEvents
     }
 
@@ -197,7 +194,7 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
             ActivityEvent(
                 appName = appName,
                 packageName = it.packageName,
-                usedAtTimestamp = it.lastTimeUsed
+                event_time = it.lastTimeUsed
             )
         }
 
