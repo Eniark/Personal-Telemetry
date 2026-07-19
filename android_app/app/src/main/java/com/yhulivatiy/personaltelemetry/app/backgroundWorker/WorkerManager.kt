@@ -28,6 +28,7 @@ class WorkerManager (
 
 
     fun startTracking() {
+
         val request = PeriodicWorkRequestBuilder<CustomWorker>(
             CustomWorker.TRACKING_WINDOW_MINUTES, TimeUnit.MINUTES
         )

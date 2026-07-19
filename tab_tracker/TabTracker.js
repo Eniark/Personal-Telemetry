@@ -3,12 +3,12 @@ import { Tab } from "./Tab.js"
 export class TabTracker {
     constructor() {
         this.currentTab = this.previousTab = null;
-        this.event_time = null;
+        this.eventTime = null;
         this.userTracked = true;
     }
 
     async saveCurrentSession() {
-        if (!this.currentTab || !this.event_time) return;
+        if (!this.currentTab || !this.eventTime) return;
         if (!this.userTracked) return;
 
         try {
@@ -20,7 +20,7 @@ export class TabTracker {
                 body: JSON.stringify({
                     website: this.currentTab.url,
                     title: this.currentTab.title,
-                    started_at: this.event_time,
+                    eventTime: this.eventTime,
                     ended_at: Date.now(),
                 })
             });
@@ -40,7 +40,7 @@ export class TabTracker {
 
         if (!tab) {
             this.currentTab = null;
-            this.event_time = null;
+            this.eventTime = null;
             this.userTracked = false;
         }
         else {
@@ -48,7 +48,7 @@ export class TabTracker {
             this.currentTab = new Tab(tab.id, tab.url, tab.title)
             // console.log("Current Tab:", this.currentTab)
             // console.log("Previous Tab:",this.previousTab)
-            this.event_time = Date.now();
+            this.eventTime = Date.now();
             this.userTracked = true;
         }
 

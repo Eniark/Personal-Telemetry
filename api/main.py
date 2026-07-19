@@ -22,7 +22,7 @@ event_processor = EventProcessor(db)
 @app.post("/browser_event")
 async def event(payload: dict):
     event_time = datetime.datetime.fromtimestamp(
-            payload.get('event_time') / 1000
+            payload.get('eventTime') / 1000
         ).strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION] # Converts Unix-style timetamp to human-readable format 
 
     event = BrowserEvent(

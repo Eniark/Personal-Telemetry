@@ -5,16 +5,18 @@ from configs import TIMESTAMP_FORMAT, TIMESTAMP_MS_PRECISION
 
 @dataclass
 class Event:
-    started_at: int
+    event_time: int
     ended_at: int
 
 @dataclass
 class OperatingSystemEvent(Event):
+    category: str
     process: str
+    publisher: str
     type: str
 
     def __repr__(self):
-        return f"OS Activity: {self.process=}, {self.started_at=}, {self.type=}"
+        return f"OS Activity: {self.process=}, {self.event_time=}, {self.type=}"
     
 @dataclass
 class BrowserEvent(Event):
@@ -32,6 +34,6 @@ class PhoneMapper:
         return OperatingSystemEvent(
             process=payload.get('appName'),
             type="Phone",
-            started_at=payload.get('usedAtTimestamp'),
+            event_time=payload.get('usedAtTimestamp'),
             ended_at=ended_at
         )
