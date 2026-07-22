@@ -1,3 +1,4 @@
+# NOTE: move the application-related libraries to their respective directories
 import logging
 from configs import LOGS_FOLDER
 import datetime
