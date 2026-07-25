@@ -40,6 +40,7 @@ async def event(payload: dict):
     ended_at = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
     event = OperatingSystemEvent(
         process=payload.get("process"),
+        window_title=payload.get("title"),
         event_time=payload.get("event_time"),
         ended_at=ended_at,
         category=payload.get("category"),

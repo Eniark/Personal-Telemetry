@@ -12,6 +12,7 @@ class Event:
 class OperatingSystemEvent(Event):
     category: str
     process: str
+    window_title: str
     publisher: str
     type: str
 
@@ -32,7 +33,8 @@ class PhoneMapper:
     def to_os_event(payload: dict):
         ended_at = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
         return OperatingSystemEvent(
-            process=payload.get('appName'),
+            publisher=payload.get('packageName'),
+            window_title=payload.get('appName'),
             type="Phone",
             event_time=payload.get('usedAtTimestamp'),
             ended_at=ended_at

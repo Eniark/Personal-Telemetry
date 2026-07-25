@@ -39,19 +39,19 @@ class ActivityRepository:
     def insert_os_activities(self, activities):
         cursor = self.db.executemany("""
             INSERT INTO os_activity
-            (window, started_at, type)
-            VALUES (?, ?, ?)
+            (executable, window_title, started_at, type)
+            VALUES (?, ?, ?, ?)
         """, (
             [
                 (
                     activity.process,
+                    activity.process_title,
                     activity.event_time,
                     activity.type
                 )
                 for activity in activities
             ]
         ))
-        print(activities)
         self.db.commit()
         return cursor.lastrowid
 

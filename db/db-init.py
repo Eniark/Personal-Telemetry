@@ -9,7 +9,8 @@ cursor.execute(
     """
     CREATE TABLE IF NOT EXISTS os_activity (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        window TEXT,
+        executable TEXT,
+        window_title TEXT,
         event_time INTEGER,
         type TEXT
     )
