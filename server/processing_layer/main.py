@@ -1,4 +1,4 @@
-from logger import logger
+from server.logger import logger
 from processing_layer.event import BrowserEvent, OperatingSystemEvent
 
 class EventProcessor:

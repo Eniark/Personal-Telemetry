@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import datetime
 
-from configs import TIMESTAMP_FORMAT, TIMESTAMP_MS_PRECISION
+from shared.configs import TIMESTAMP_FORMAT, TIMESTAMP_MS_PRECISION
 
 # FIXME: Add frozen=True and slots=True to @dataclass decorators for memory optimization and event immutability.
 @dataclass

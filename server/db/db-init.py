@@ -1,5 +1,5 @@
 import sqlite3
-from configs import DB_PATH
+from shared.configs import DB_PATH
 
 # FIXME: Manual commit() and close() leave the database prone to locking if an exception occurs mid-execution.
 # SUGGESTION: Use a context manager: `with sqlite3.connect(DB_PATH) as conn:` which handles commits and rollbacks safely.

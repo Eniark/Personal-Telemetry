@@ -12,12 +12,12 @@ activity.db
 # =======
 
 # Android App builds
-android_app/app/build/
-android_app/build/
-android_app/.gradle/
-android_app/local.properties
-android_app/app/src/androidTest/
-android_app/app/src/test/
+agents/android/app/build/
+agents/android/build/
+agents/android/.gradle/
+agents/android/local.properties
+agents/android/app/src/androidTest/
+agents/android/app/src/test/
 # =======
 
 # IDE files
@@ -27,6 +27,6 @@ android_app/app/src/test/
 # =======
 
 # Native builds
-android_app/externalNativeBuild/
-android_app/cxx/
+agents/android/externalNativeBuild/
+agents/android/cxx/
 # =======

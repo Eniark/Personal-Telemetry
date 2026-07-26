@@ -3,7 +3,7 @@ import win32con
 import pythoncom
 import requests
 import datetime
-from configs import TIMESTAMP_FORMAT, TIMESTAMP_MS_PRECISION
+from shared.configs import TIMESTAMP_FORMAT, TIMESTAMP_MS_PRECISION
 import os
 import win32process
 import psutil
