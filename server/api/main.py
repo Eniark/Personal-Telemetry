@@ -37,7 +37,7 @@ async def browser_event_endpoint(payload: BrowserEventSchema):
         ).strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION] # Converts Unix-style timetamp to human-readable format 
 
     event = BrowserEvent(
-        os_event_id=event_processor.os_activity_last_row_id,
+        os_event_id=event_processor.os_event_last_id,
         event_time=event_time,
         ended_at=payload.ended_at,
         website = payload.website,
@@ -55,7 +55,8 @@ async def os_event_endpoint(payload: OSEventSchema):
         ended_at=ended_at,
         category=payload.category,
         publisher=payload.publisher,
-        type="PC"
+        type="PC",
+        linked_browser_events=[]
     )
     event_processor.handle_os_event(event)
     return {"ok": True}
@@ -74,11 +75,6 @@ async def health():
 
 if __name__ == "__main__":
     HOST, PORT = get_env_variables()
-
-    # FIXME: Weird hack to force 0.0.0.0.
-    # SUGGESTION: TRUST YOUR ENVIRONMENTAL VARIABLES. Avoids accidental issues with "listen all" when testing on localhost
-    if HOST=='127.0.0.1':
-        HOST = '0.0.0.0' # allows the API to listen to all devices in the network
 
     uvicorn.run(
         "server.api.main:app", host=HOST, port=PORT, reload=True

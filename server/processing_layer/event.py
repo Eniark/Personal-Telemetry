@@ -12,16 +12,6 @@ class Event:
     ended_at: int
 
 @dataclass(slots=True, frozen=True)
-class OperatingSystemEvent(Event):
-    category: EventCategory
-    process: str
-    publisher: str
-    type: str
-
-    def __repr__(self):
-        return f"OS Activity: {self.process=}, {self.event_time=}, {self.type=}"
-    
-@dataclass(slots=True, frozen=True)
 class BrowserEvent(Event):
     os_event_id: int | None = None
     website: str | None = None
@@ -29,6 +19,18 @@ class BrowserEvent(Event):
 
     def __repr__(self):
         return f"Browser Activity: {self.website=}, {self.os_event_id=}"
+    
+
+@dataclass(slots=True, frozen=True)
+class OperatingSystemEvent(Event):
+    category: EventCategory
+    process: str
+    publisher: str
+    type: str
+    linked_browser_events: list[BrowserEvent]
+
+    def __repr__(self):
+        return f"OS Activity: {self.process=}, {self.event_time=}, {self.type=}"
     
 
 class PhoneMapper:

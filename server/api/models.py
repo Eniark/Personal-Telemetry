@@ -14,7 +14,7 @@ class PhoneEventSchema(BaseModel):
 class OSEventSchema(BaseModel):
     process: str
     title: str
-    publisher: str
+    publisher: str | None
     category: str
     event_time: str
 

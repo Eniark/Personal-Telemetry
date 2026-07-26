@@ -8,7 +8,7 @@ telemetryEnv/
 # Logs / data
 Logs/
 logs.log
-activity.db
+telemetry.db
 # =======
 
 # Android App builds

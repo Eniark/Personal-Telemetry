@@ -7,7 +7,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 LOGS_FOLDER = PROJECT_ROOT / "server" / "logs"
 
 # Database configs
-DB_NAME = "activity.db"
+DB_NAME = "telemetry.db"
 DB_PATH = PROJECT_ROOT / "server" / "db" / DB_NAME
 
 # Data Format Settings
