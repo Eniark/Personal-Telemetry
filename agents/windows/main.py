@@ -4,39 +4,33 @@ import pythoncom
 import requests
 import datetime
 from shared.configs import TIMESTAMP_FORMAT, TIMESTAMP_MS_PRECISION
-import os
 import win32process
 import psutil
 from dotenv import load_dotenv
 import win32api
+from queue import Queue
+import threading
+from shared.utils import get_env_variables
 load_dotenv()
-
-# FIXME: os.getenv returning None will cause int(None) to throw a TypeError and crash on startup if the .env file is missing or incomplete.
-# SUGGESTION: Provide safe defaults: int(os.getenv("PORT", 8000)) or VALIDATE.
-HOST = os.getenv("HOST")
-PORT = int(os.getenv("PORT"))
-
-BROWSER_EXECUTABLES = {
-    "chrome.exe",
-    "msedge.exe",
-    "firefox.exe",
-    "opera.exe",
-    "brave.exe",
-    "vivaldi.exe"
-}
-
 
 def get_process_info(window_id):
     _, pid = win32process.GetWindowThreadProcessId(window_id)
-    # FIXME: psutil.Process(pid) will throw psutil.AccessDenied for elevated system processes, and psutil.NoSuchProcess if the window closes too quickly. This will crash the hook.
-    # SUGGESTION: Wrap this in a try-except block, and return fallback values (e.g. return "Unknown", None).
-    process = psutil.Process(pid)
-    return process.name(), process.exe()
+    try:
+        process = psutil.Process(pid)
+        return process.name(), process.exe()
+    except psutil.NoSuchProcess:
+        return "Unknown", None
 
-def get_event_category(window_id):
-    # FIXME: Performance issue. You already fetch process_info inside the callback, but you are re-fetching it here. psutil lookups are expensive on Windows.
-    # SUGGESTION: Modify this function signature to accept the `executable` string directly instead of `window_id` so you don't query the OS twice for the same event.
-    executable, _ = get_process_info(window_id)
+def get_event_category(executable):
+    BROWSER_EXECUTABLES = {
+        "chrome.exe",
+        "msedge.exe",
+        "firefox.exe",
+        "opera.exe",
+        "brave.exe",
+        "vivaldi.exe"
+    }
+    
     if executable.lower() in BROWSER_EXECUTABLES:
         return 'browser'
     return 'operating_system'
@@ -55,12 +49,22 @@ def get_publisher_name(exe_path):
 
         return info
     except Exception:
-        # FIXME: Bare Exception catches can hide serious bugs (!!!!! like KeyboardInterrupt or SystemExit).
-        # SUGGESTION: Catch specific exceptions, or at least use `except Exception as e:` and log it in debug mode.
         return None
 
 
-user32 = ctypes.windll.user32
+
+
+
+def sender():
+    while True:
+        data = event_queue.get()
+        try:
+            print(data)
+            requests.post(f"http://{HOST}:{PORT}/os_event", json=data)
+        finally:
+            event_queue.task_done()
+
+
 
 def callback(hook, event, hwnd, idObject, idChild, thread, time):
     if hwnd: # the window ID
@@ -71,7 +75,7 @@ def callback(hook, event, hwnd, idObject, idChild, thread, time):
         if buffer.value:
             executable, absolute_path = get_process_info(hwnd)
             publisher_name = get_publisher_name(absolute_path)
-            process_category = get_event_category(hwnd)
+            process_category = get_event_category(executable)
             data = {
                 "process": executable,
                 "title": buffer.value,
@@ -79,31 +83,32 @@ def callback(hook, event, hwnd, idObject, idChild, thread, time):
                 "category": process_category,
                 "event_time": datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
             }
-            print(data)
-            # FIXME: CRITICAL PERFORMANCE BLOCKER. requests.post is synchronous. Doing network I/O inside a Windows system event hook callback will freeze the hook loop, cause system-wide stutter, and Windows will likely silently drop your hook for taking too long to return.
-            # SUGGESTION: Decouple data extraction from network transmission. Put the `data` dictionary into a thread-safe Queue, and have a separate background worker thread pull from the queue to execute the `requests.post`.
-            requests.post(f"http://{HOST}:{PORT}/os_event", json=data)
-            
 
-WinEventProc = ctypes.WINFUNCTYPE(
-    None, ctypes.c_void_p, ctypes.c_uint,
-    ctypes.c_void_p, ctypes.c_long, ctypes.c_long,
-    ctypes.c_uint, ctypes.c_uint
-)
+            event_queue.put(data)
+            threading.Thread(target=sender, daemon=True).start() # so no blocking of main thread happens
 
-hook_cb = WinEventProc(callback)
+if __name__=='__main__':
+    event_queue = Queue()
+    user32 = ctypes.windll.user32
 
-user32.SetWinEventHook(
-    win32con.EVENT_SYSTEM_FOREGROUND, # Starting range of events to track
-    win32con.EVENT_SYSTEM_FOREGROUND, # Ending range of events to track
-    0,
-    hook_cb,
-    0,
-    0,
-    win32con.WINEVENT_OUTOFCONTEXT
-)
+    HOST, PORT = get_env_variables()
 
-# FIXME: CRITICAL CPU SPIKE. A `while True` loop without any sleep or blocking wait will pin a CPU core to 100% usage indefinitely.
-# SUGGESTION: Replace this entire loop with `pythoncom.PumpMessages()`- it blocks the thread and yields CPU time while keeping the Windows message loop alive.
-while True:
-    pythoncom.PumpWaitingMessages()
+    WinEventProc = ctypes.WINFUNCTYPE(
+        None, ctypes.c_void_p, ctypes.c_uint,
+        ctypes.c_void_p, ctypes.c_long, ctypes.c_long,
+        ctypes.c_uint, ctypes.c_uint
+    )
+
+    hook_cb = WinEventProc(callback)
+
+    user32.SetWinEventHook(
+        win32con.EVENT_SYSTEM_FOREGROUND, # Starting range of event types to track
+        win32con.EVENT_SYSTEM_FOREGROUND, # Ending range of event types to track
+        0,
+        hook_cb,
+        0,
+        0,
+        win32con.WINEVENT_OUTOFCONTEXT
+    )
+
+    pythoncom.PumpMessages()

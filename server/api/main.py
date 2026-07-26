@@ -1,14 +1,15 @@
 from fastapi import FastAPI
-from dotenv import load_dotenv
 from shared.configs import DB_PATH
 import sqlite3
 import uvicorn
 import os
 import datetime
-from processing_layer.event import PhoneMapper
-from processing_layer.main import EventProcessor, ActivityRepository, BrowserEvent, OperatingSystemEvent
+from server.processing_layer.event import PhoneMapper
+from server.processing_layer.main import EventProcessor, ActivityRepository, BrowserEvent, OperatingSystemEvent
 from shared.configs import TIMESTAMP_FORMAT, TIMESTAMP_MS_PRECISION
-from api.models import PhoneEventSchema, OSEventSchema, BrowserEventSchema
+from server.api.models import PhoneEventSchema, OSEventSchema, BrowserEventSchema
+from shared.utils import get_env_variables
+from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI()
@@ -29,24 +30,18 @@ db = sqlite3.connect(
 db = ActivityRepository(db)
 event_processor = EventProcessor(db)
 
-# FIXME: All your POST endpoints are named `async def event`. In Python, the later definitions overwrite the earlier ones in the module namespace. While FastAPI routes might still technically fire, it ruins OpenAPI schema generation and internal references.
-# SUGGESTION: Rename pls.
 @app.post("/browser_event")
-# FIXME: Typing payloads as `dict` defeats the core strength of FastAPI (auto-validation, 422 error handling, Swagger UI generation).
-# SUGGESTION: Define Pydantic `BaseModel` classes for your incoming payloads and type hint them here (e.g., `payload: BrowserPayloadSchema`).
 async def browser_event_endpoint(payload: BrowserEventSchema):
-    # FIXME: If `eventTime` is missing from the payload, `payload.get('eventTime')` returns `None`. `None / 1000` will crash the server with a TypeError.
-    # SUGGESTION: PYDANTIC (auto-validates)
     event_time = datetime.datetime.fromtimestamp(
-            payload.get('eventTime') / 1000
+            payload.eventTime / 1000
         ).strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION] # Converts Unix-style timetamp to human-readable format 
 
     event = BrowserEvent(
         os_event_id=event_processor.os_activity_last_row_id,
         event_time=event_time,
-        ended_at=payload.get("ended_at"),
-        website = payload.get("website"),
-        website_title = payload.get("title")
+        ended_at=payload.ended_at,
+        website = payload.website,
+        website_title = payload.title
     )
     event_processor.handle_browser_event(event)
     return {"ok": True}
@@ -55,11 +50,11 @@ async def browser_event_endpoint(payload: BrowserEventSchema):
 async def os_event_endpoint(payload: OSEventSchema):
     ended_at = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
     event = OperatingSystemEvent(
-        process=payload.get("process"),
-        event_time=payload.get("event_time"),
+        process=payload.process,
+        event_time=payload.event_time,
         ended_at=ended_at,
-        category=payload.get("category"),
-        publisher=payload.get("publisher"),
+        category=payload.category,
+        publisher=payload.publisher,
         type="PC"
     )
     event_processor.handle_os_event(event)
@@ -67,7 +62,6 @@ async def os_event_endpoint(payload: OSEventSchema):
 
 @app.post("/phone_event")
 async def phone_event_endpoint(payload: list[PhoneEventSchema]): # the phone sends batches every 15 minutes
-    print(payload)
     for phone_event in payload:
         event = PhoneMapper.to_os_event(phone_event)
         event_processor.handle_os_event(event)
@@ -79,24 +73,13 @@ async def health():
 
 
 if __name__ == "__main__":
-    # FIXME: `os.getenv` returns `None` if the variable is missing. `int(None)` will throw a TypeError and the app will completely fail to start.
-    # SUGGESTION: Add env vars validation in config on-import (hint: vars() in the end of the file will yield everything, and you can check if anything is none = raise)
+    HOST, PORT = get_env_variables()
 
-    REQUIRED_USER_VARIABLES = ["PORT"]
-    module_vars = vars().copy()
-
-    print(module_vars)
-    for variable in REQUIRED_USER_VARIABLES:
-        if variable not in module_vars:
-            raise Exception(f"\"{variable}\" variable must be defined in the .env file")
-            
-    # HOST = os.getenv("HOST")
-    # PORT = int(os.getenv("PORT"))
     # FIXME: Weird hack to force 0.0.0.0.
     # SUGGESTION: TRUST YOUR ENVIRONMENTAL VARIABLES. Avoids accidental issues with "listen all" when testing on localhost
     if HOST=='127.0.0.1':
-        HOST = '0.0.0.0' # allows the API to list to all network sources: WiFi,
+        HOST = '0.0.0.0' # allows the API to listen to all devices in the network
 
     uvicorn.run(
-        "api.main:app", host=HOST, port=PORT, reload=True
+        "server.api.main:app", host=HOST, port=PORT, reload=True
     )

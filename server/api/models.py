@@ -6,7 +6,7 @@ class PhoneEventSchema(BaseModel):
     packageName: str
     appName: str
     description: str
-    event_time: str
+    event_time: int
     sentToApi: bool
     isVerified: bool
     isSystemEvent: bool
@@ -22,5 +22,5 @@ class OSEventSchema(BaseModel):
 class BrowserEventSchema(BaseModel):
     website: str
     title: str
-    eventTime: str
-    ended_at: str
+    eventTime: int # unix-style timestamp
+    ended_at: int # unix-style timestamp

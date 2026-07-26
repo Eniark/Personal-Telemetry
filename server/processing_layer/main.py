@@ -1,5 +1,5 @@
 from server.logger import logger
-from processing_layer.event import BrowserEvent, OperatingSystemEvent
+from server.processing_layer.event import BrowserEvent, OperatingSystemEvent
 
 class EventProcessor:
     def __init__(self, repository):
@@ -12,9 +12,7 @@ class EventProcessor:
     def handle_browser_event(self, event: BrowserEvent):
         self.browser_activities.append(event)
         
-        # FIXME: Using '>' instead of '>=' means you store batch_size + 1 items before flushing (e.g. 6 items for batch_size=5). Use '>=' or fix the batch threshold.
-        # SUGGESTION: Change to `>= self.batch_size` to strictly honor the exact batch limit.
-        if len(self.browser_activities) > self.batch_size:  # fix data sync issue
+        if len(self.browser_activities) >= self.batch_size:
             self.repository.insert_browser_activities(self.browser_activities)
             self.browser_activities = []
         logger.info(f"Browser Event: {event.website} - {event.os_event_id}")
@@ -68,8 +66,7 @@ class ActivityRepository:
         # FYI: SQLite `RETURNING id` clause with `fetchall()` if you need IDs of batch-inserted rows.
         return cursor.lastrowid
 
-    def insert_browser_activities(self, activities): # not working properly
-        # FIXME: "not working properly"??
+    def insert_browser_activities(self, activities):
         self.db.executemany("""
             INSERT INTO browser_activity
             (website, started_at, ended_at, activity_id)

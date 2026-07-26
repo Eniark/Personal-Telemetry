@@ -1,17 +1,19 @@
 from dataclasses import dataclass
 import datetime
 
+from server.api.models import PhoneEventSchema
+from server.processing_layer.enums import EventCategory
 from shared.configs import TIMESTAMP_FORMAT, TIMESTAMP_MS_PRECISION
 
-# FIXME: Add frozen=True and slots=True to @dataclass decorators for memory optimization and event immutability.
-@dataclass
+
+@dataclass(slots=True, frozen=True)
 class Event:
     event_time: int
     ended_at: int
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class OperatingSystemEvent(Event):
-    category: str
+    category: EventCategory
     process: str
     publisher: str
     type: str
@@ -19,10 +21,9 @@ class OperatingSystemEvent(Event):
     def __repr__(self):
         return f"OS Activity: {self.process=}, {self.event_time=}, {self.type=}"
     
-@dataclass
+@dataclass(slots=True, frozen=True)
 class BrowserEvent(Event):
-    # FIXME: os_event_id: int = None violates type safety. Use os_event_id: int | None = None
-    os_event_id: int = None
+    os_event_id: int | None = None
     website: str | None = None
     website_title: str | None = None
 
@@ -31,14 +32,15 @@ class BrowserEvent(Event):
     
 
 class PhoneMapper:
-    # FIXME: Add @staticmethod decorator or convert to a standalone function since this holds no state and lacks 'self'.
-    def to_os_event(payload: dict):
+    @staticmethod
+    def to_os_event(payload: PhoneEventSchema):
         ended_at = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
 
-        # FIXME: Fragile payload extraction. payload.get('usedAtTimestamp') can return None, polluting the integer event_time field without validation.
         return OperatingSystemEvent(
-            process=payload.get('appName'),
+            process=payload.appName,
             type="Phone",
-            event_time=payload.get('usedAtTimestamp'),
-            ended_at=ended_at
+            event_time=payload.event_time,
+            ended_at=ended_at,
+            publisher=payload.packageName,
+            category='OS'
         )
