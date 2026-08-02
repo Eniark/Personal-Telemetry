@@ -12,16 +12,15 @@ class EventProcessor:
     def _flush_if_needed(self):
         if len(self.events) >= self.batch_size:
             os_events = self.events.values()
-            last_event_id = self.repository.insert_os_events(os_events)
-            print(last_event_id)
-            if last_event_id: # successfull transaction
-                print(self.os_event_last_id)
-                self.os_event_last_id = last_event_id
-                print(self.os_event_last_id)
+            successfull_transaction = self.repository.insert_os_events(os_events)
+            if successfull_transaction:
                 for os_event in os_events:
                     browser_events = os_event.linked_browser_events
                     self.repository.insert_browser_events(browser_events)
-                self.events.clear()
+            else:
+                self.os_event_last_id -= len(self.events) # roll back to the latest event id
+            self.events.clear()
+            
         
     def handle_browser_event(self, event: BrowserEvent):
         os_event = self.events.get(self.os_event_last_id)
@@ -32,6 +31,7 @@ class EventProcessor:
 
     def handle_os_event(self, event: OperatingSystemEvent):
         self.events[self.os_event_last_id + 1] = event
+        self.os_event_last_id += 1 # in the future when saving to disk will be added, this will be changed 
         self._flush_if_needed()
         logger.info(f"OS Event: {event.process} - {self.os_event_last_id}")
     
@@ -40,11 +40,12 @@ class ActivityRepository:
         self.db = db
 
     def insert_os_events(self, activities):
-        cursor = self.db.executemany("""
+        print("Inserting:", activities)
+        # in SQLite executemany does not return the list of last inserted IDs.
+        self.db.executemany("""
             INSERT INTO os_events
             (window, event_start_time, type)
-            VALUES (?, ?, ?)
-            RETURNING id;
+            VALUES (?, ?, ?);
         """, (
             (
                 activity.process,
@@ -55,35 +56,27 @@ class ActivityRepository:
         ))
         try:
             self.db.commit()
+            return True
         except sqlite3.Error as e:
             print(e)
-            return None
-        ids = cursor.fetchall()
-        print('INSERTED')
-        return ids
+        
 
     def insert_browser_events(self, activities):
-        cursor = self.db.executemany("""
+        self.db.executemany("""
             INSERT INTO browser_events
             (website, event_start_time, event_end_time, os_event_id)
-            VALUES (?, ?, ?, ?)
-            RETURNING id;
+            VALUES (?, ?, ?, ?);
         """, (
-            [
-                (
-                    activity.website,
-                    activity.event_time,
-                    activity.ended_at,
-                    activity.os_event_id
-                )
-                for activity in activities
-            ] 
-            
+            (
+                activity.website,
+                activity.event_time,
+                activity.ended_at,
+                activity.os_event_id
+            )
+            for activity in activities
         ))
 
         self.db.commit()
-        ids = cursor.fetchall()
-        return ids
 
     
     def get_max_id(self, table_name):

@@ -12,6 +12,7 @@ with sqlite3.connect(DB_PATH) as conn:
         CREATE TABLE IF NOT EXISTS os_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             window TEXT,
+            executable TEXT,
             event_start_time INTEGER,
             type TEXT
         )
