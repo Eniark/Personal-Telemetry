@@ -21,8 +21,7 @@ def create_db_connection():
     finally:
         conn.close()
 
-# FIXME: Global SQLite connection shared across FastAPI's async worker threads is ANTI-pattern. It WILL lead to database locking and potential corruption.
-# SUGGESTION: Use Dependency Injection (`Depends()`) to yield a database connection per request, or use async (`aiosqlite`).
+# add parallel connections to the database?
 db = sqlite3.connect(
     DB_PATH,
     check_same_thread=False

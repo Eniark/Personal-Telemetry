@@ -15,6 +15,6 @@ TIMESTAMP_FORMAT = "%d-%m-%y %H:%M:%S.%f"
 TIMESTAMP_MS_PRECISION = 3
 
 
-# FIXME: ambiguous logic: why -precision? (add a comment or make it explicit)
+# ambiguous logic:add a comment or make it explicit
 if TIMESTAMP_MS_PRECISION is not None:
     TIMESTAMP_MS_PRECISION = -TIMESTAMP_MS_PRECISION

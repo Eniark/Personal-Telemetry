@@ -7,57 +7,32 @@ class EventProcessor:
         self.repository = repository
         self.os_event_last_id = self.repository.get_max_id("os_events")
         self.events = {}
-        # self.browser_activities = []
         self.batch_size = 5
 
     def _flush_if_needed(self):
         if len(self.events) >= self.batch_size:
-            self.repository.insert_os_activities(self.events.values())
-
-        if self.browser_activities:
-            self.repository.insert_browser_activities(self.browser_activities)
-            self.os_activities.clear()
-            self.browser_activities.clear()
-
-        if len(self.browser_activities) >= self.batch_size:
-            self._flush_all()
-
-        elif len(self.os_activities) >= self.batch_size:
-            self.repository.insert_os_events(self.os_activities)
-            self.os_activities.clear()
-
+            os_events = self.events.values()
+            last_event_id = self.repository.insert_os_events(os_events)
+            print(last_event_id)
+            if last_event_id: # successfull transaction
+                print(self.os_event_last_id)
+                self.os_event_last_id = last_event_id
+                print(self.os_event_last_id)
+                for os_event in os_events:
+                    browser_events = os_event.linked_browser_events
+                    self.repository.insert_browser_events(browser_events)
+                self.events.clear()
+        
     def handle_browser_event(self, event: BrowserEvent):
-        self.events[self.os_event_last_id].linked_browser_events.append(event)
-        # # self.browser_activities.append(event)
-        # browser_activities = self.events[self.os_event_last_id].linked_browser_events
-        # if len(browser_activities) >= self.batch_size:
-        #     self.repository.insert_os_events(self.events)
-        #     self.events = []
-
-        #     self.repository.insert_browser_activities(browser_activities)
-        #     self.browser_activities = []
+        os_event = self.events.get(self.os_event_last_id)
+        if os_event:
+            os_event.linked_browser_events.append(event)
         self._flush_if_needed()
         logger.info(f"Browser Event: {event.website} - {event.os_event_id}")
 
     def handle_os_event(self, event: OperatingSystemEvent):
         self.events[self.os_event_last_id + 1] = event
-        # FIXME: Incrementing this ID in-memory before DB commit guarantees your state will drift if a DB insert fails. 
-        # DIRSUGGESTIONECTION: Only update `os_event_last_id` AFTER a successful DB batch insert, or use UUIDs for events instead of auto-incrementing DB integers.
-        self.os_event_last_id += 1
-        
-        # FIXME: Fatal logic bug. Checking 'len(self.browser_activities)' inside an OS event handler creates cross-domain coupling and race conditions. 
-        # Also, you flush browser activities and reset the list, but then immediately try to flush it again inside the block.
-        # SUGGESTION: Extract flushing into a dedicated `_flush_all()` method. Call it when either list hits the threshold. Ensure OS events are inserted *before* browser events to satisfy foreign keys.
-        if len(self.browser_activities) >= self.batch_size: # for case when user is stuck in browser
-            self.repository.insert_os_events(self.events)
-            self.events = []
-
-            self.repository.insert_browser_activities(self.browser_activities)
-            self.browser_activities = []
-        
-        elif len(self.events) > self.batch_size:
-            self.repository.insert_os_events(self.events)
-            self.events = []
+        self._flush_if_needed()
         logger.info(f"OS Event: {event.process} - {self.os_event_last_id}")
     
 class ActivityRepository:
@@ -80,15 +55,17 @@ class ActivityRepository:
         ))
         try:
             self.db.commit()
-        except sqlite3.Error:
-            pass
+        except sqlite3.Error as e:
+            print(e)
+            return None
         ids = cursor.fetchall()
+        print('INSERTED')
         return ids
 
-    def insert_browser_activities(self, activities):
+    def insert_browser_events(self, activities):
         cursor = self.db.executemany("""
             INSERT INTO browser_events
-            (website, event_start_time, event_end_time, activity_id)
+            (website, event_start_time, event_end_time, os_event_id)
             VALUES (?, ?, ?, ?)
             RETURNING id;
         """, (

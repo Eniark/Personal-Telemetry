@@ -20,18 +20,18 @@ with sqlite3.connect(DB_PATH) as conn:
     # The table for browser events
     cursor.execute(
         """
-        CREATE TABLE IF NOT EXISTS browser_event (
+        CREATE TABLE IF NOT EXISTS browser_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             website TEXT,
             event_start_time INTEGER,
             event_end_time INTEGER,
-            event_id INTEGER,
-            FOREIGN KEY (event_id) REFERENCES os_event(id) 
+            os_event_id INTEGER,
+            FOREIGN KEY (os_event_id) REFERENCES os_event(id) 
         )
         """)
     # The table for browser events
     cursor.execute(
         """
-            CREATE INDEX IF NOT EXISTS idx_browser_event_id ON browser_event(event_id);
+            CREATE INDEX IF NOT EXISTS idx_browser_event_id ON browser_events(os_event_id);
         """)
     
