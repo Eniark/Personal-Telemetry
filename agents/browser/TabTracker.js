@@ -8,12 +8,7 @@ export class TabTracker {
 
     async saveCurrentSession() {
         if (!this.userTracked) return;
-        console.log({
-            url: this.previousTab.url,
-            title: this.previousTab.title,
-            eventStartTime: this.previousTab.eventStartTime,
-            eventEndTime: Date.now()
-        })
+ 
         try {
             const res = await fetch("http://127.0.0.1:8000/browser_event", {
                 method: "POST",
@@ -51,7 +46,6 @@ export class TabTracker {
             this.userTracked = true;
         }
         else {
-            console.log("EWXEC")
             this.currentTab = null;
             this.userTracked = false;
         }
