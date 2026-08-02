@@ -4,7 +4,7 @@ class EventType(Enum):
     BROWSER = 'browser'
     OS = 'os'
 
-class EventCategories:
+class EventCategory:
     WORK = "work"
     STUDYING = "studying"
     GAMING = "gaming"

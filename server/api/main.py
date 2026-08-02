@@ -53,7 +53,8 @@ async def browser_event_endpoint(payload: BrowserEventSchema):
 async def os_event_endpoint(payload: OSEventSchema):
     ended_at = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
     event = OperatingSystemEvent(
-        process=payload.process,
+        process=payload.executable,
+        title = payload.title,
         event_time=payload.event_time,
         ended_at=ended_at,
         category=payload.category,
@@ -61,6 +62,7 @@ async def os_event_endpoint(payload: OSEventSchema):
         type="PC",
         linked_browser_events=[]
     )
+    print(event)
     event_processor.handle_os_event(event)
     return {"ok": True}
 

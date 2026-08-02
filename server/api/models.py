@@ -12,7 +12,7 @@ class PhoneEventSchema(BaseModel):
     isSystemEvent: bool
 
 class OSEventSchema(BaseModel):
-    process: str
+    executable: str
     title: str
     publisher: str | None
     category: str

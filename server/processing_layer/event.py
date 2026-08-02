@@ -10,12 +10,12 @@ from shared.configs import TIMESTAMP_FORMAT, TIMESTAMP_MS_PRECISION
 class Event:
     event_time: int
     ended_at: int
+    title: str | None
 
 @dataclass(slots=True, frozen=True)
 class BrowserEvent(Event):
     os_event_id: int | None = None
     website: str | None = None
-    website_title: str | None = None
 
     def __repr__(self):
         return f"Browser Activity: {self.website=}, {self.os_event_id=}"

@@ -77,7 +77,7 @@ def callback(hook, event, hwnd, idObject, idChild, thread, time):
             publisher_name = get_publisher_name(absolute_path)
             process_category = get_event_category(executable)
             data = {
-                "process": executable,
+                "executable": executable,
                 "title": buffer.value,
                 "publisher": publisher_name,
                 "category": process_category,
