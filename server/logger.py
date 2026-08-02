@@ -1,5 +1,5 @@
 import logging
-from configs import LOGS_FOLDER
+from shared.configs import LOGS_FOLDER
 import datetime
 
 logger: logging.Logger = logging.getLogger("tracker")
