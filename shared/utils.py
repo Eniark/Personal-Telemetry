@@ -1,5 +1,8 @@
+import datetime
 from dotenv import load_dotenv
 import os
+
+from shared.configs import TIMESTAMP_FORMAT, TIMESTAMP_MS_PRECISION
 
 
 def get_env_variables():
@@ -13,3 +16,12 @@ def get_env_variables():
     port = int(os.getenv("PORT"))
 
     return host, port
+
+def convert_date_to_readable_format(unix_time: int) -> str:
+    event_time = (
+        datetime.datetime
+            .fromtimestamp(unix_time)
+            .strftime(TIMESTAMP_FORMAT)
+            [:TIMESTAMP_MS_PRECISION] # Converts Unix-style timetamp to human-readable format 
+    )
+    return event_time

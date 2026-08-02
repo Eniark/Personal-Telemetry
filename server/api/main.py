@@ -8,7 +8,7 @@ from server.processing_layer.main import EventProcessor, ActivityRepository, Bro
 from shared.configs import TIMESTAMP_FORMAT, TIMESTAMP_MS_PRECISION
 from server.api.models import PhoneEventSchema, OSEventSchema, BrowserEventSchema
 from server.processing_layer.classifier import HardCodedClassifier, MLClassifier, LLMClassifier
-from shared.utils import get_env_variables
+from shared.utils import convert_date_to_readable_format, get_env_variables
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -35,34 +35,34 @@ event_processor = EventProcessor(db, [hardCodedClassifier, mlClassifier, llMClas
 
 @app.post("/browser_event")
 async def browser_event_endpoint(payload: BrowserEventSchema):
-    event_time = datetime.datetime.fromtimestamp(
-            payload.eventTime / 1000
-        ).strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION] # Converts Unix-style timetamp to human-readable format 
-
+    processing_time = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
+    event_start_time = convert_date_to_readable_format(payload.eventStartTime / 1000)
+    event_end_time = convert_date_to_readable_format(payload.eventStartTime / 1000)
     event = BrowserEvent(
         os_event_id=event_processor.os_event_last_id,
-        event_time=event_time,
-        ended_at=payload.ended_at,
-        website = payload.website,
-        website_title = payload.title
+        event_start_time=event_start_time,
+        event_end_time=event_end_time,
+        processing_time=processing_time,
+        url = payload.url,
+        title = payload.title
     )
     event_processor.handle_browser_event(event)
     return {"ok": True}
 
 @app.post("/os_event")
 async def os_event_endpoint(payload: OSEventSchema):
-    ended_at = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
+    processing_time = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
     event = OperatingSystemEvent(
         process=payload.executable,
         title = payload.title,
-        event_time=payload.event_time,
-        ended_at=ended_at,
+        event_start_time=payload.event_start_time,
+        event_end_time=payload.event_end_time,
+        processing_time=processing_time,
         category=payload.category,
         publisher=payload.publisher,
         type="PC",
         linked_browser_events=[]
     )
-    print(event)
     event_processor.handle_os_event(event)
     return {"ok": True}
 

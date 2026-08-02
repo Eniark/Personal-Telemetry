@@ -7,9 +7,10 @@ data class ActivityEvent(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val packageName: String,
-    val appName: String?,
+    var appName: String? = null,
     val description: String? = null,
-    val event_time: Long,
+    var eventStartTime: Long? = null,
+    var eventEndTime: Long? = null,
     val sentToApi: Boolean = false,
     val isVerified: Boolean = false,
     val isSystemEvent: Boolean = false
@@ -17,7 +18,7 @@ data class ActivityEvent(
 
 ) {
     override fun toString(): String {
-        return "ActivityEvent(id=$id, packageName=$packageName"
+        return "ActivityEvent(id=$id, packageName=$packageName, eventStartTime=$eventStartTime, eventEndTime=$eventEndTime"
     }
 
 }

@@ -12,6 +12,10 @@ telemetry.db
 # =======
 
 # Android App builds
+server/processing_layer/ml_classifier_training
+# =======
+
+# Android App builds
 agents/android/app/build/
 agents/android/build/
 agents/android/.gradle/

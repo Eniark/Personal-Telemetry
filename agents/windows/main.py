@@ -67,6 +67,7 @@ def sender():
 
 
 def callback(hook, event, hwnd, idObject, idChild, thread, time):
+    global current_object
     if hwnd: # the window ID
         length = user32.GetWindowTextLengthW(hwnd) # needed for C-language as C requires a fixed size memory buffer
         buffer = ctypes.create_unicode_buffer(length + 1)
@@ -81,13 +82,19 @@ def callback(hook, event, hwnd, idObject, idChild, thread, time):
                 "title": buffer.value,
                 "publisher": publisher_name,
                 "category": process_category,
-                "event_time": datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
+                "event_start_time": datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
             }
 
-            event_queue.put(data)
-            threading.Thread(target=sender, daemon=True).start() # so no blocking of main thread happens
+            if current_object:
+                current_object["event_end_time"] = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
+                event_queue.put(current_object)
+                threading.Thread(target=sender, daemon=True).start() # so no blocking of main thread happens
+            current_object = data
+
 
 if __name__=='__main__':
+    current_object = {}
+    
     event_queue = Queue()
     user32 = ctypes.windll.user32
 

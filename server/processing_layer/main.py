@@ -2,16 +2,16 @@ from __future__ import annotations
 import sqlite3
 from server.logger import logger
 from server.processing_layer.event import BrowserEvent, OperatingSystemEvent
-from server.processing_layer.classifier import HardCodedClassifier, MLClassifier, LLMClassifier
+from server.processing_layer.classifier import Classifier
 from sqlite3 import Connection
 
 class EventProcessor:
-    def __init__(self, repository: ActivityRepository, classifiers: list[HardCodedClassifier|MLClassifier|LLMClassifier]) -> None:
+    def __init__(self, repository: ActivityRepository, classifiers: list[Classifier]) -> None:
         self.repository = repository
         self.os_event_last_id: int = self.repository.get_max_id("os_events")
         self.events: dict[int, OperatingSystemEvent] = {}
         self.batch_size = 5
-        self.classifiers: list[HardCodedClassifier|MLClassifier|LLMClassifier] = classifiers
+        self.classifiers = classifiers
 
     def _flush_if_needed(self) -> None:
         if len(self.events) >= self.batch_size:
@@ -31,7 +31,7 @@ class EventProcessor:
         if os_event:
             os_event.linked_browser_events.append(event)
         self._flush_if_needed()
-        logger.info(f"Browser Event: {event.website} - {event.os_event_id}")
+        logger.info(f"Browser Event: {event.url} - {event.os_event_id}")
 
     def handle_os_event(self, event: OperatingSystemEvent):
         self.events[self.os_event_last_id + 1] = event
@@ -47,13 +47,15 @@ class ActivityRepository:
         # in SQLite executemany does not return the list of last inserted IDs.
         self.db.executemany("""
             INSERT INTO os_events
-            (window, executable, event_start_time, type)
-            VALUES (?, ?, ?);
+            (window, executable, event_start_time, event_end_time, processing_time, type)
+            VALUES (?, ?, ?, ?, ?, ?);
         """, (
             (
                 activity.title,
                 activity.process,
-                activity.event_time,
+                activity.event_start_time,
+                activity.event_end_time,
+                activity.processing_time,
                 activity.type
             )
             for activity in activities
@@ -68,13 +70,15 @@ class ActivityRepository:
     def insert_browser_events(self, activities: list[BrowserEvent]) -> None:
         self.db.executemany("""
             INSERT INTO browser_events
-            (website, event_start_time, event_end_time, os_event_id)
-            VALUES (?, ?, ?, ?);
+            (url, title, event_start_time, event_end_time, processing_time, os_event_id)
+            VALUES (?, ?, ?, ?, ?, ?);
         """, (
             (
-                activity.website,
-                activity.event_time,
-                activity.ended_at,
+                activity.url,
+                activity.title,
+                activity.event_start_time,
+                activity.event_end_time,
+                activity.processing_time,
                 activity.os_event_id
             )
             for activity in activities

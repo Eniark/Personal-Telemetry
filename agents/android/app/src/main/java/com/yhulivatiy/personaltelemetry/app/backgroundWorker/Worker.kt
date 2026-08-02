@@ -1,5 +1,6 @@
 package com.yhulivatiy.personaltelemetry.app.backgroundWorker
 
+import android.app.usage.UsageEvents
 import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
@@ -62,10 +63,10 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
 
             // Scrape metadata for unknown apps
             if (connectivityService.isConnectedToNetwork()) {
-                enrichedApps = enrichApps(
-                    appsThatRequireEnrichment,
-                    repository
-                )
+//                enrichedApps = enrichApps(
+//                    appsThatRequireEnrichment,
+//                    repository
+//                )
             }
             else {
                 enrichedApps = appsThatRequireEnrichment
@@ -160,43 +161,65 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
             applicationContext.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
 
         val endTime = System.currentTimeMillis()
-        val startTime = endTime - 1000 * 60 * TRACKING_WINDOW_MINUTES // last 10 minutes
-        val stats = usageStatsManager
-            .queryUsageStats(
-                UsageStatsManager.INTERVAL_DAILY,
-                startTime,
-                endTime
-            )
+        val startTime = endTime - 1000 * 60 * TRACKING_WINDOW_MINUTES
+
+        val events = usageStatsManager.queryEvents(startTime, endTime)
 
         val pm = applicationContext.packageManager
-        // Filter the apps to non-system apps and apps whose last activity falls between during the time window as usageStatsManager provides aggregated information
-        val activityEvents: List<ActivityEvent> = stats.filter {
+        val event = UsageEvents.Event() // Gives a generator of Events that have duplicate entries.
+        val activityEvents = mutableListOf<ActivityEvent>()
+        val sessions  = mutableMapOf<String, ActivityEvent>()
+
+        // create a map with paired start and end time to combat the duplicate entries from above.
+        // =================================================
+        while (events.hasNextEvent()) {
+            events.getNextEvent(event)
+            when (event.eventType) {
+                UsageEvents.Event.ACTIVITY_RESUMED -> {
+                    val session = sessions.getOrPut(event.packageName) {
+                        ActivityEvent(
+                            packageName = event.packageName
+                        )
+                    }
+                    session.eventStartTime = event.timeStamp
+                }
+
+                UsageEvents.Event.ACTIVITY_PAUSED -> {
+                    val session = sessions[event.packageName] ?: continue
+                    session.eventEndTime = event.timeStamp
+                }
+            }
+        }
+        // =================================================
+
+        // Get the appName.
+        // =================================================
+        for (event in sessions.values) {
+
             val isSystem = try {
-                val appInfo = pm.getApplicationInfo(it.packageName, 0)
+                val appInfo = pm.getApplicationInfo(event.packageName, 0)
                 (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0 ||
                         (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
-
-            }
-            catch (e: Exception) {
+            } catch (e: Exception) {
                 false
             }
 
-            it.lastTimeUsed in startTime..endTime && !isSystem
-        }.map {
+            if (isSystem) continue
+
             val appName = try {
-                val appInfo = pm.getApplicationInfo(it.packageName, 0)
+                val appInfo = pm.getApplicationInfo(event.packageName, 0)
                 pm.getApplicationLabel(appInfo).toString()
-            }
-            catch (e: Exception) {
+            } catch (e: Exception) {
                 null
             }
 
-            ActivityEvent(
-                appName = appName,
-                packageName = it.packageName,
-                event_time = it.lastTimeUsed
+            activityEvents.add(
+                event.copy(
+                    appName = appName
+                )
             )
         }
+        // =================================================
 
         return activityEvents
     }

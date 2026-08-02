@@ -13,8 +13,10 @@ with sqlite3.connect(DB_PATH) as conn:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             window TEXT,
             executable TEXT,
-            event_start_time INTEGER,
-            type TEXT
+            event_start_time TEXT,
+            event_end_time TEXT,
+            type TEXT,
+            processing_time TEXT
         )
         """)
 
@@ -23,9 +25,11 @@ with sqlite3.connect(DB_PATH) as conn:
         """
         CREATE TABLE IF NOT EXISTS browser_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            website TEXT,
-            event_start_time INTEGER,
-            event_end_time INTEGER,
+            url TEXT,
+            title TEXT,
+            event_start_time TEXT,
+            event_end_time TEXT,
+            processing_time TEXT,
             os_event_id INTEGER,
             FOREIGN KEY (os_event_id) REFERENCES os_event(id) 
         )
