@@ -1,5 +1,15 @@
 from enum import Enum
 
-class EventCategory(Enum):
+class EventType(Enum):
     BROWSER = 'browser'
     OS = 'os'
+
+class EventCategories:
+    WORK = "work"
+    STUDYING = "studying"
+    GAMING = "gaming"
+    SOCIAL_MEDIA = "social_media"
+    MUSIC = "music"
+    SHOPPING = "shopping"
+    NEWS = "news"
+    OTHER = "other"

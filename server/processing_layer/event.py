@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import datetime
 
 from server.api.models import PhoneEventSchema
-from server.processing_layer.enums import EventCategory
+from server.processing_layer.enums import EventType
 from shared.configs import TIMESTAMP_FORMAT, TIMESTAMP_MS_PRECISION
 
 
@@ -23,7 +23,7 @@ class BrowserEvent(Event):
 
 @dataclass(slots=True, frozen=True)
 class OperatingSystemEvent(Event):
-    category: EventCategory
+    category: EventType
     process: str
     publisher: str
     type: str

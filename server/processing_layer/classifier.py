@@ -1,6 +1,15 @@
 from ollama import chat
+from enums import EventCategories
 
+class HardCodedClassifier:
+    activity_map = {
+        "Steam.exe": EventCategories.GAMING,
+        "Telegram.exe": EventCategories.SOCIAL_MEDIA,
+        "Code.exe": EventCategories.STUDYING,
+    }
 
+class MLClassifier:
+    pass
 
 
 class LLMClassifier:

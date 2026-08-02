@@ -1,19 +1,23 @@
 import sqlite3
+from typing import List
 from server.logger import logger
-from server.processing_layer.event import BrowserEvent, OperatingSystemEvent
+from server.processing_layer.event import BrowserEvent, OperatingSystemEvent, ActivityRepository
+from server.processing_layer.classifier import HardCodedClassifier, MLClassifier, LLMClassifier
+from sqlite3 import Connection
 
 class EventProcessor:
-    def __init__(self, repository):
-        self.repository = repository
-        self.os_event_last_id = self.repository.get_max_id("os_events")
-        self.events = {}
+    def __init__(self, repository: ActivityRepository, classifiers: List[HardCodedClassifier|MLClassifier|LLMClassifier]) -> None:
+        self.repository: ActivityRepository = repository
+        self.os_event_last_id: int = self.repository.get_max_id("os_events")
+        self.events: dict[int, OperatingSystemEvent] = {}
         self.batch_size = 5
+        self.classifiers: List[HardCodedClassifier|MLClassifier|LLMClassifier] = classifiers
 
-    def _flush_if_needed(self):
+    def _flush_if_needed(self) -> None:
         if len(self.events) >= self.batch_size:
             os_events = self.events.values()
-            successfull_transaction = self.repository.insert_os_events(os_events)
-            if successfull_transaction:
+            successful_transaction = self.repository.insert_os_events(os_events)
+            if successful_transaction:
                 for os_event in os_events:
                     browser_events = os_event.linked_browser_events
                     self.repository.insert_browser_events(browser_events)
@@ -36,10 +40,10 @@ class EventProcessor:
         logger.info(f"OS Event: {event.process} - {self.os_event_last_id}")
     
 class ActivityRepository:
-    def __init__(self, db):
+    def __init__(self, db: Connection):
         self.db = db
 
-    def insert_os_events(self, activities):
+    def insert_os_events(self, activities: List[OperatingSystemEvent]) -> None:
         print("Inserting:", activities)
         # in SQLite executemany does not return the list of last inserted IDs.
         self.db.executemany("""
@@ -61,7 +65,7 @@ class ActivityRepository:
             print(e)
         
 
-    def insert_browser_events(self, activities):
+    def insert_browser_events(self, activities: List[BrowserEvent]) -> None:
         self.db.executemany("""
             INSERT INTO browser_events
             (website, event_start_time, event_end_time, os_event_id)
@@ -79,7 +83,7 @@ class ActivityRepository:
         self.db.commit()
 
     
-    def get_max_id(self, table_name):
+    def get_max_id(self, table_name: str) -> int:
         allowed_tables = ["os_events"]
         if table_name not in allowed_tables:
             raise ValueError("Unknown table name.")
