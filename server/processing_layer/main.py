@@ -4,6 +4,7 @@ from server.logger import logger
 from server.processing_layer.event import BrowserEvent, OperatingSystemEvent
 from server.processing_layer.classifier import Classifier
 from sqlite3 import Connection
+from .enums import EventType
 
 class EventProcessor:
     def __init__(self, repository: ActivityRepository, classifiers: list[Classifier]) -> None:
@@ -27,23 +28,24 @@ class EventProcessor:
             
         
     def handle_browser_event(self, event: BrowserEvent):
-        os_event = self.events.get(self.os_event_last_id)
-        if os_event:
-            os_event.linked_browser_events.append(event)
+        os_event = self.events.get(event.os_event_id)
+        os_event.linked_browser_events.append(event)
+
         self._flush_if_needed()
         logger.info(f"Browser Event: {event.url} - {event.os_event_id}")
 
     def handle_os_event(self, event: OperatingSystemEvent):
-        self.events[self.os_event_last_id + 1] = event
         self.os_event_last_id += 1 # in the future when saving to disk will be added, this will be changed 
+        self.events[self.os_event_last_id] = event
         self._flush_if_needed()
         logger.info(f"OS Event: {event.process} - {self.os_event_last_id}")
+        print(self.events)
     
 class ActivityRepository:
     def __init__(self, db: Connection):
         self.db = db
 
-    def insert_os_events(self, activities: list[OperatingSystemEvent]) -> None:
+    def insert_os_events(self, activities: list[OperatingSystemEvent]) -> bool:
         # in SQLite executemany does not return the list of last inserted IDs.
         self.db.executemany("""
             INSERT INTO os_events

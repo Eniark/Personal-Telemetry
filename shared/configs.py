@@ -11,13 +11,7 @@ DB_NAME = "telemetry.db"
 DB_PATH = PROJECT_ROOT / "server" / "db" / DB_NAME
 
 # Data Format Settings
-TIMESTAMP_FORMAT = "%d-%m-%y %H:%M:%S.%f"
-TIMESTAMP_MS_PRECISION = 3
-
-
-# ambiguous logic:add a comment or make it explicit
-if TIMESTAMP_MS_PRECISION is not None:
-    TIMESTAMP_MS_PRECISION = -TIMESTAMP_MS_PRECISION
+TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 
 # connection settings
 LISTEN_TO_ALL_DEVICES = True

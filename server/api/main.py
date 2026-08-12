@@ -5,11 +5,12 @@ import uvicorn
 import datetime
 from server.processing_layer.event import PhoneMapper
 from server.processing_layer.main import EventProcessor, ActivityRepository, BrowserEvent, OperatingSystemEvent
-from shared.configs import TIMESTAMP_FORMAT, TIMESTAMP_MS_PRECISION, LISTEN_TO_ALL_DEVICES
+from shared.configs import TIMESTAMP_FORMAT, LISTEN_TO_ALL_DEVICES
 from server.api.models import PhoneEventSchema, OSEventSchema, BrowserEventSchema
 from server.processing_layer.classifier import HardCodedClassifier, MLClassifier, LLMClassifier
 from shared.utils import convert_date_to_readable_format, get_env_variables
 from dotenv import load_dotenv
+from server.processing_layer.enums import EventType
 load_dotenv()
 
 app = FastAPI()
@@ -35,7 +36,7 @@ event_processor = EventProcessor(db, [hardCodedClassifier, mlClassifier, llMClas
 
 @app.post("/browser_event")
 async def browser_event_endpoint(payload: BrowserEventSchema):
-    processing_time = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
+    processing_time = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
     event_start_time = convert_date_to_readable_format(payload.eventStartTime / 1000)
     event_end_time = convert_date_to_readable_format(payload.eventStartTime / 1000)
     event = BrowserEvent(
@@ -50,28 +51,26 @@ async def browser_event_endpoint(payload: BrowserEventSchema):
     return {"ok": True}
 
 @app.post("/os_event")
-async def os_event_endpoint(payload: list[OSEventSchema]):
-    print(payload)
-    for os_event in payload:
-        processing_time = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
-        event = OperatingSystemEvent(
-            process=os_event.executable,
-            title = os_event.title,
-            event_start_time=os_event.event_start_time,
-            event_end_time=os_event.event_end_time,
-            processing_time=processing_time,
-            category=os_event.category,
-            publisher=os_event.publisher,
-            type="PC",
-            linked_browser_events=[],
-            event_type=os_event.event_type
-        )
-        event_processor.handle_os_event(event)
+async def os_event_endpoint(payload: OSEventSchema):
+    processing_time = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
+    print(processing_time)
+    category = EventType.OS if payload.category == 'OS' else EventType.BROWSER
+    event = OperatingSystemEvent(
+        process=payload.executable,
+        title = payload.title,
+        event_start_time=payload.event_start_time,
+        event_end_time=payload.event_end_time,
+        processing_time=processing_time,
+        category=category,
+        publisher=payload.publisher,
+        type="PC",
+        linked_browser_events=[]
+    )
+    event_processor.handle_os_event(event)
     return {"ok": True}
 
 @app.post("/phone_event")
 async def phone_event_endpoint(payload: list[PhoneEventSchema]): # the phone sends batches every 15 minutes
-    print(payload)
     for phone_event in payload:
         event = PhoneMapper.to_os_event(phone_event)
         event_processor.handle_os_event(event)

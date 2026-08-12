@@ -59,7 +59,7 @@ def sender():
     while True:
         data = event_queue.get()
         try:
-            # print(data)
+            print(data)
             response = requests.post(f"http://{HOST}:{PORT}/os_event", json=data)
             print(response.text)
         finally:
@@ -83,17 +83,13 @@ def callback(hook, event, hwnd, idObject, idChild, thread, time):
                 "title": buffer.value,
                 "publisher": publisher_name,
                 "category": process_category,
-                "event_start_time": datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION],
-                "event_type": "EVENT_START"
+                "event_start_time": datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
             }
-            prepared_data = [current_object]
-            if previous_object:
-                previous_object["event_end_time"] = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
-                previous_object["event_type"] = "EVENT_END"
-                prepared_data.insert(0, previous_object)
-            
-            event_queue.put(prepared_data)
-            threading.Thread(target=sender, daemon=True).start() # so no blocking of main thread happens
+
+            if current_object:
+                current_object["event_end_time"] = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
+                event_queue.put(current_object)
+                threading.Thread(target=sender, daemon=True).start() # so no blocking of main thread happens
             previous_object = current_object
 
 

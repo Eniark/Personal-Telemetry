@@ -18,9 +18,7 @@ class OSEventSchema(BaseModel):
     publisher: str | None
     category: str
     event_start_time: str
-    event_end_time: str | None = None # the event with event_type=EVENT_START will not have this field 
-    event_type: str
-
+    event_end_time: str
 
 class BrowserEventSchema(BaseModel):
     url: str
