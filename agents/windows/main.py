@@ -59,15 +59,16 @@ def sender():
     while True:
         data = event_queue.get()
         try:
-            print(data)
-            requests.post(f"http://{HOST}:{PORT}/os_event", json=data)
+            # print(data)
+            response = requests.post(f"http://{HOST}:{PORT}/os_event", json=data)
+            print(response.text)
         finally:
             event_queue.task_done()
 
 
 
 def callback(hook, event, hwnd, idObject, idChild, thread, time):
-    global current_object
+    global previous_object
     if hwnd: # the window ID
         length = user32.GetWindowTextLengthW(hwnd) # needed for C-language as C requires a fixed size memory buffer
         buffer = ctypes.create_unicode_buffer(length + 1)
@@ -77,23 +78,27 @@ def callback(hook, event, hwnd, idObject, idChild, thread, time):
             executable, absolute_path = get_process_info(hwnd)
             publisher_name = get_publisher_name(absolute_path)
             process_category = get_event_category(executable)
-            data = {
+            current_object = {
                 "executable": executable,
                 "title": buffer.value,
                 "publisher": publisher_name,
                 "category": process_category,
-                "event_start_time": datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
+                "event_start_time": datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION],
+                "event_type": "EVENT_START"
             }
-
-            if current_object:
-                current_object["event_end_time"] = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
-                event_queue.put(current_object)
-                threading.Thread(target=sender, daemon=True).start() # so no blocking of main thread happens
-            current_object = data
+            prepared_data = [current_object]
+            if previous_object:
+                previous_object["event_end_time"] = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)[:TIMESTAMP_MS_PRECISION]
+                previous_object["event_type"] = "EVENT_END"
+                prepared_data.insert(0, previous_object)
+            
+            event_queue.put(prepared_data)
+            threading.Thread(target=sender, daemon=True).start() # so no blocking of main thread happens
+            previous_object = current_object
 
 
 if __name__=='__main__':
-    current_object = {}
+    previous_object = {}
     
     event_queue = Queue()
     user32 = ctypes.windll.user32

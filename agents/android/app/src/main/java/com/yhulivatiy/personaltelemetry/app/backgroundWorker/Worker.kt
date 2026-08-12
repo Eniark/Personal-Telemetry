@@ -63,10 +63,10 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
 
             // Scrape metadata for unknown apps
             if (connectivityService.isConnectedToNetwork()) {
-//                enrichedApps = enrichApps(
-//                    appsThatRequireEnrichment,
-//                    repository
-//                )
+                enrichedApps = enrichApps(
+                    appsThatRequireEnrichment,
+                    repository
+                )
             }
             else {
                 enrichedApps = appsThatRequireEnrichment

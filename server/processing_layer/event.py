@@ -10,12 +10,12 @@ from shared.configs import TIMESTAMP_FORMAT, TIMESTAMP_MS_PRECISION
 class Event:
     event_start_time: int
     event_end_time: int
-    title: str | None
+    title: str | None = field(default=None, kw_only=True)
     processing_time: str | None = field(default=None, kw_only=True)
 
 @dataclass(slots=True, frozen=True)
 class BrowserEvent(Event):
-    url: str
+    url: str 
     os_event_id: int | None = None
 
     def __repr__(self):
@@ -28,7 +28,8 @@ class OperatingSystemEvent(Event):
     process: str
     publisher: str
     type: str
-    linked_browser_events: list[BrowserEvent]
+    event_type: str
+    linked_browser_events: list[BrowserEvent] = field(default_factory=list, kw_only=True)
 
     def __repr__(self):
         return f"OS Activity: {self.process=}, {self.event_start_time=}, {self.type=}"
