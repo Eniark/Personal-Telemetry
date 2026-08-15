@@ -9,6 +9,7 @@ data class ActivityEvent(
     val packageName: String,
     var appName: String? = null,
     val description: String? = null,
+    val developer: String? = null,
     var eventStartTime: Long? = null,
     var eventEndTime: Long? = null,
     val sentToApi: Boolean = false,

@@ -6,6 +6,7 @@ class PhoneEventSchema(BaseModel):
     packageName: str
     appName: str
     description: str
+    developer: str
     eventStartTime: int
     eventEndTime: int
     sentToApi: bool

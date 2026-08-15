@@ -1,6 +1,7 @@
 package com.yhulivatiy.personaltelemetry.app.repository
 
 import android.util.Log
+import com.yhulivatiy.personaltelemetry.app.database.AppInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -10,10 +11,11 @@ import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 
 class GooglePlayScraper {
-    suspend fun getAppInformation(packageName: String): Triple<String, String, Boolean> {
+    suspend fun getAppInformation(packageName: String): AppInfo {
         var appName = packageName
-        var description = "No description found"
-        var isSystem: Boolean = false;
+        var description: String? = null
+        var developer: String? = null
+        var isSystem = false;
         try {
             delay(Random.nextLong(1_000, 3_000).milliseconds)  // Add a random delay between requests
             val body = withContext(Dispatchers.IO) { // withContext switches the thread from main thread to a different one and returns result to the main thread.
@@ -26,6 +28,7 @@ class GooglePlayScraper {
 
             appName = body.selectFirst("span[itemprop=name]")?.text() ?: appName
             description = body.selectFirst("div[data-g-id=description]")?.text() ?: description
+            developer = body.selectFirst("a[href*=\"store/apps/dev\"]")?.text() ?: developer
             isSystem = false
         } catch (e: HttpStatusException)
         {
@@ -34,7 +37,7 @@ class GooglePlayScraper {
             }
             Log.e("SCRAPER", "Failed", e)
         }
-        return Triple(appName, description, isSystem)
+        return AppInfo(appName, description, developer, isSystem)
     }
 
 }

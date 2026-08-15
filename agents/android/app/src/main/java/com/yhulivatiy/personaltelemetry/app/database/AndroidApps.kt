@@ -15,6 +15,7 @@ data class AndroidApps(
     val packageName: String,
     val appName: String?,
     val description: String?,
+    val developer: String?,
     val isSystem: Boolean,
     val isVerified: Boolean
 

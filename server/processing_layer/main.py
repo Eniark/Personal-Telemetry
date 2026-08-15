@@ -30,7 +30,7 @@ class EventProcessor:
         
     def handle_browser_event(self, event: BrowserEvent):
         os_event = self.events.get(event.os_event_id)
-        if os_event.category == EventType.OS: # handling of the issue of event ordering
+        if os_event is None or os_event.category == EventType.OS: # handling of the issue of event ordering
             self._browser_events.append(event)
 
         logger.info(f"Browser Event: {event.url} - {event.os_event_id}")
@@ -53,16 +53,18 @@ class ActivityRepository:
         # in SQLite executemany does not return the list of last inserted IDs.
         self.db.executemany("""
             INSERT INTO os_events
-            (window, executable, event_start_time, event_end_time, processing_time, type)
+            (title, executable, publisher, description, event_start_time, event_end_time, processing_time, type)
             VALUES (?, ?, ?, ?, ?, ?);
         """, (
             (
                 activity.title,
                 activity.process,
+                activity.publisher,
+                activity.description,
                 activity.event_start_time,
                 activity.event_end_time,
                 activity.processing_time,
-                activity.type
+                activity.category.value
             )
             for activity in activities
         ))

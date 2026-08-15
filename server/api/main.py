@@ -45,7 +45,8 @@ async def browser_event_endpoint(payload: BrowserEventSchema):
         event_end_time=event_end_time,
         processing_time=processing_time,
         url = payload.url,
-        title = payload.title
+        title = payload.title,
+        category=EventType.BROWSER
     )
     event_processor.handle_browser_event(event)
     return {"ok": True}
@@ -57,12 +58,12 @@ async def os_event_endpoint(payload: OSEventSchema):
     event = OperatingSystemEvent(
         process=payload.executable,
         title = payload.title,
+        description=None,
         event_start_time=payload.event_start_time,
         event_end_time=payload.event_end_time,
         processing_time=processing_time,
         category=category,
         publisher=payload.publisher,
-        type="PC",
         linked_browser_events=[]
     )
     event_processor.handle_os_event(event)

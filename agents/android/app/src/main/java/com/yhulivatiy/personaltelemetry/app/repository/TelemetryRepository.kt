@@ -6,6 +6,7 @@ import com.yhulivatiy.personaltelemetry.app.database.ActivityEvent
 import com.yhulivatiy.personaltelemetry.app.database.ActivityEventDao
 import com.yhulivatiy.personaltelemetry.app.database.AndroidApps
 import com.yhulivatiy.personaltelemetry.app.database.AndroidAppsDao
+import com.yhulivatiy.personaltelemetry.app.database.AppInfo
 import kotlinx.coroutines.flow.Flow
 import retrofit2.Response
 import retrofit2.Retrofit
@@ -50,7 +51,7 @@ class TelemetryRepository(
             activityEventDao.markAsSent(events.map { it.id })
     }
 
-    suspend fun getAppInformation(packageName: String): Triple<String, String, Boolean> {
+    suspend fun getAppInformation(packageName: String): AppInfo {
         return scraper.getAppInformation(packageName)
     }
     suspend fun removeSystemEvents(): Unit {

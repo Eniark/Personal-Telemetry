@@ -49,6 +49,7 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
                 AndroidApps(
                     packageName = it.packageName,
                     appName = it.appName,
+                    developer = it.developer,
                     description = it.description,
                     isSystem = false,
                     isVerified = false
@@ -122,13 +123,14 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
 
     suspend fun enrichApps(apps: List<AndroidApps>, repository: TelemetryRepository): List<AndroidApps> {
         val enrichedApps = apps.map {
-            val (appName, description, isSystemEvent) = repository.getAppInformation(it.packageName)
+            val appInfo = repository.getAppInformation(it.packageName)
 
             it.copy(
-                appName = appName,
-                description = description,
+                appName = appInfo.appName,
+                description = appInfo.description,
                 isVerified = true,
-                isSystem = isSystemEvent
+                developer = appInfo.developer,
+                isSystem = appInfo.isSystem
             )
 
         }
