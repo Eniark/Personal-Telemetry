@@ -10,7 +10,7 @@ with sqlite3.connect(DB_PATH) as conn:
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS os_events (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id TEXT PRIMARY KEY,
             title TEXT,
             executable TEXT,
             publisher TEXT,
@@ -32,7 +32,7 @@ with sqlite3.connect(DB_PATH) as conn:
             event_start_time TEXT,
             event_end_time TEXT,
             processing_time TEXT,
-            os_event_id INTEGER,
+            os_event_id TEXT,
             FOREIGN KEY (os_event_id) REFERENCES os_event(id) 
         )
         """)

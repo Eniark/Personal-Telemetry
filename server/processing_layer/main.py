@@ -1,49 +1,50 @@
 from __future__ import annotations
 import sqlite3
-from server.logger import logger
-from server.processing_layer.event import BrowserEvent, OperatingSystemEvent
+
+from server.processing_layer.event import BrowserEvent, OperatingSystemEvent, Event
 from server.processing_layer.classifier import Classifier
 from sqlite3 import Connection
 from .enums import EventType
+from server.logger import logger
+from pprint import pprint
 
 class EventProcessor:
     def __init__(self, repository: ActivityRepository, classifiers: list[Classifier]) -> None:
         self.repository = repository
-        self.os_event_last_id: int = self.repository.get_max_id("os_events")
-        self.events: dict[int, OperatingSystemEvent] = {}
+        self.events: list[Event] = {
+            category: [] 
+            for category in EventType
+        }
         self.batch_size = 5
         self.classifiers = classifiers
-        self._browser_events = []
+        self._browser_events_window: list[BrowserEvent] = []
 
-    def _flush_if_needed(self) -> None:
-        if len(self.events) >= self.batch_size:
-            os_events = self.events.values()
-            successful_transaction = self.repository.insert_os_events(os_events)
-            if successful_transaction:
-                for os_event in os_events:
-                    browser_events = os_event.linked_browser_events
-                    self.repository.insert_browser_events(browser_events)
-            else:
-                self.os_event_last_id -= len(self.events) # roll back to the latest event id
-            self.events.clear()
+    def _flush_if_needed(self) -> None:        
+        successful_transaction = self.repository.insert_os_events(self.events[EventType.OS])
+        if successful_transaction:
+            self.repository.insert_browser_events(self.events[EventType.BROWSER])
+            for category in EventType:
+                self.events[category].clear()
             
         
     def handle_browser_event(self, event: BrowserEvent):
-        os_event = self.events.get(event.os_event_id)
-        if os_event is None or os_event.category == EventType.OS: # handling of the issue of event ordering
-            self._browser_events.append(event)
+        self._browser_events_window.append(event) # the events are inserted in _handle_late_os_event due to late browser events
 
-        logger.info(f"Browser Event: {event.url} - {event.os_event_id}")
 
     def handle_os_event(self, event: OperatingSystemEvent):
-        self.os_event_last_id += 1 # in the future when saving to disk will be added, this will be changed 
-        if event.category == EventType.BROWSER and len(self._browser_events) != 0:
-            event.linked_browser_events.extend(self._browser_events)
-            self._browser_events.clear()
+        self._handle_late_os_event(event)
 
-        self.events[self.os_event_last_id] = event
+        self.events[EventType.OS].append(event)
         self._flush_if_needed()
-        logger.info(f"OS Event: {event.process} - {self.os_event_last_id}")
+    
+    def _handle_late_os_event(self, event: OperatingSystemEvent) -> None:
+        if event.category == EventType.BROWSER and len(self._browser_events_window) != 0:
+            for browser_event in self._browser_events_window:
+                browser_event.os_event_id = event.id
+                logger.info(f"Browser Event: {browser_event.url} - {browser_event.os_event_id}")
+            self.events[EventType.BROWSER].extend(self._browser_events_window)
+            self._browser_events_window.clear()
+
     
 class ActivityRepository:
     def __init__(self, db: Connection):
@@ -93,12 +94,3 @@ class ActivityRepository:
         ))
 
         self.db.commit()
-
-    
-    def get_max_id(self, table_name: str) -> int:
-        allowed_tables = ["os_events"]
-        if table_name not in allowed_tables:
-            raise ValueError("Unknown table name.")
-
-        cursor = self.db.execute(f"SELECT COALESCE(MAX(id), 0) FROM \'{table_name}\'") # SQLite does not support ? substitution for table names, hence doing an f-string
-        return cursor.fetchone()[0] or 0

@@ -5,6 +5,7 @@ from server.api.models import PhoneEventSchema
 from server.processing_layer.enums import EventType
 from shared.configs import TIMESTAMP_FORMAT
 from shared.utils import convert_date_to_readable_format
+from uuid import uuid4
 
 
 @dataclass(slots=True)
@@ -28,8 +29,8 @@ class BrowserEvent(Event):
 class OperatingSystemEvent(Event):
     process: str
     publisher: str
+    id: str
     description: str | None = None
-    linked_browser_events: list[BrowserEvent] = field(default_factory=list, kw_only=True)
 
     def __repr__(self):
         return f"<OS Activity: {self.process=}, linked_browser_events={len(self.linked_browser_events)}, {self.category=}>"
@@ -50,5 +51,6 @@ class PhoneMapper:
             processing_time=processing_time,
             publisher=payload.developer,
             process=payload.packageName,
-            category=EventType.PHONE_OS
+            category=EventType.PHONE_OS,
+            id=str(uuid4())
         )

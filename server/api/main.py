@@ -11,6 +11,8 @@ from server.processing_layer.classifier import HardCodedClassifier, MLClassifier
 from shared.utils import convert_date_to_readable_format, get_env_variables
 from dotenv import load_dotenv
 from server.processing_layer.enums import EventType
+from server.logger import logger
+from uuid import uuid4
 load_dotenv()
 
 app = FastAPI()
@@ -40,7 +42,6 @@ async def browser_event_endpoint(payload: BrowserEventSchema):
     event_start_time = convert_date_to_readable_format(payload.eventStartTime / 1000)
     event_end_time = convert_date_to_readable_format(payload.eventStartTime / 1000)
     event = BrowserEvent(
-        os_event_id=event_processor.os_event_last_id,
         event_start_time=event_start_time,
         event_end_time=event_end_time,
         processing_time=processing_time,
@@ -64,9 +65,10 @@ async def os_event_endpoint(payload: OSEventSchema):
         processing_time=processing_time,
         category=category,
         publisher=payload.publisher,
-        linked_browser_events=[]
+        id=str(uuid4())
     )
     event_processor.handle_os_event(event)
+    logger.info(f"OS Event: {event.process} - {event.id}")
     return {"ok": True}
 
 @app.post("/phone_event")
@@ -74,6 +76,7 @@ async def phone_event_endpoint(payload: list[PhoneEventSchema]): # the phone sen
     for phone_event in payload:
         event = PhoneMapper.to_os_event(phone_event)
         event_processor.handle_os_event(event)
+        logger.info(f"Phone Event: {event.process} - {event.id}")
     return {"ok": True}
 
 @app.get("/health")
