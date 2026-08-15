@@ -11,6 +11,7 @@ import win32api
 from queue import Queue
 import threading
 from shared.utils import get_env_variables
+from server.processing_layer.enums import EventType
 load_dotenv()
 
 def get_process_info(window_id):
@@ -32,8 +33,8 @@ def get_event_category(executable):
     }
     
     if executable.lower() in BROWSER_EXECUTABLES:
-        return 'browser'
-    return 'operating_system'
+        return EventType.BROWSER.value
+    return EventType.OS.value
 
 def get_publisher_name(exe_path):
     try:
@@ -60,8 +61,7 @@ def sender():
         data = event_queue.get()
         try:
             print(data)
-            response = requests.post(f"http://{HOST}:{PORT}/os_event", json=data)
-            print(response.text)
+            requests.post(f"http://{HOST}:{PORT}/os_event", json=data)
         finally:
             event_queue.task_done()
 

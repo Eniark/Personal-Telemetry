@@ -45,8 +45,9 @@ class TelemetryRepository(
 
 
     suspend fun sendEventsToAPI(events: List<ActivityEvent>): Unit {
-        api.sendEvents(events)
-        activityEventDao.markAsSent(events.map { it.id })
+        val response = api.sendEvents(events)
+        if (response.isSuccessful)
+            activityEventDao.markAsSent(events.map { it.id })
     }
 
     suspend fun getAppInformation(packageName: String): Triple<String, String, Boolean> {

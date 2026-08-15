@@ -13,6 +13,7 @@ class EventProcessor:
         self.events: dict[int, OperatingSystemEvent] = {}
         self.batch_size = 5
         self.classifiers = classifiers
+        self._browser_events = []
 
     def _flush_if_needed(self) -> None:
         if len(self.events) >= self.batch_size:
@@ -29,17 +30,20 @@ class EventProcessor:
         
     def handle_browser_event(self, event: BrowserEvent):
         os_event = self.events.get(event.os_event_id)
-        os_event.linked_browser_events.append(event)
+        if os_event.category == EventType.OS: # handling of the issue of event ordering
+            self._browser_events.append(event)
 
-        self._flush_if_needed()
         logger.info(f"Browser Event: {event.url} - {event.os_event_id}")
 
     def handle_os_event(self, event: OperatingSystemEvent):
         self.os_event_last_id += 1 # in the future when saving to disk will be added, this will be changed 
+        if event.category == EventType.BROWSER and len(self._browser_events) != 0:
+            event.linked_browser_events.extend(self._browser_events)
+            self._browser_events.clear()
+
         self.events[self.os_event_last_id] = event
         self._flush_if_needed()
         logger.info(f"OS Event: {event.process} - {self.os_event_last_id}")
-        print(self.events)
     
 class ActivityRepository:
     def __init__(self, db: Connection):

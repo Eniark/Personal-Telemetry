@@ -53,8 +53,7 @@ async def browser_event_endpoint(payload: BrowserEventSchema):
 @app.post("/os_event")
 async def os_event_endpoint(payload: OSEventSchema):
     processing_time = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
-    print(processing_time)
-    category = EventType.OS if payload.category == 'operating_system' else EventType.BROWSER
+    category = EventType.OS if payload.category == EventType.OS.value else EventType.BROWSER
     event = OperatingSystemEvent(
         process=payload.executable,
         title = payload.title,

@@ -192,7 +192,7 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
         }
         // =================================================
 
-        // Get the appName.
+        // Get the appName. Filter out events without a eventEndTime
         // =================================================
         for (event in sessions.values) {
 
@@ -204,7 +204,7 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
                 false
             }
 
-            if (isSystem) continue
+            if (isSystem || event.eventEndTime == null) continue
 
             val appName = try {
                 val appInfo = pm.getApplicationInfo(event.packageName, 0)
