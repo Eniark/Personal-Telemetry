@@ -54,7 +54,7 @@ class ActivityRepository:
         self.db.executemany("""
             INSERT INTO os_events
             (title, executable, publisher, description, event_start_time, event_end_time, processing_time, type)
-            VALUES (?, ?, ?, ?, ?, ?);
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
         """, (
             (
                 activity.title,
