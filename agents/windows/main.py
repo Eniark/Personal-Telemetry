@@ -3,7 +3,7 @@ import win32con
 import pythoncom
 import requests
 import datetime
-from shared.configs import TIMESTAMP_FORMAT, TIMESTAMP_MS_PRECISION
+from shared.configs import TIMESTAMP_FORMAT
 import win32process
 import psutil
 from dotenv import load_dotenv
@@ -86,9 +86,9 @@ def callback(hook, event, hwnd, idObject, idChild, thread, time):
                 "event_start_time": datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
             }
 
-            if current_object:
-                current_object["event_end_time"] = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
-                event_queue.put(current_object)
+            if previous_object:
+                previous_object["event_end_time"] = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
+                event_queue.put(previous_object)
                 threading.Thread(target=sender, daemon=True).start() # so no blocking of main thread happens
             previous_object = current_object
 
