@@ -6,7 +6,6 @@ from server.processing_layer.classifier import Classifier
 from sqlite3 import Connection
 from .enums import EventType
 from server.logger import logger
-from pprint import pprint
 
 class EventProcessor:
     def __init__(self, repository: ActivityRepository, classifiers: list[Classifier]) -> None:
@@ -15,16 +14,16 @@ class EventProcessor:
             category: [] 
             for category in EventType
         }
-        self.batch_size = 5
         self.classifiers = classifiers
         self._browser_events_window: list[BrowserEvent] = []
 
-    def _flush_if_needed(self) -> None:        
-        successful_transaction = self.repository.insert_os_events(self.events[EventType.OS])
-        if successful_transaction:
-            self.repository.insert_browser_events(self.events[EventType.BROWSER])
-            for category in EventType:
-                self.events[category].clear()
+    def _flush_if_needed(self) -> None:  
+        if len(self.events[EventType.OS]) > self.repository.batch_size:      
+            successful_transaction = self.repository.insert_os_events(self.events[EventType.OS])
+            if successful_transaction:
+                self.repository.insert_browser_events(self.events[EventType.BROWSER])
+                for category in EventType:
+                    self.events[category].clear()
             
         
     def handle_browser_event(self, event: BrowserEvent):
@@ -49,15 +48,17 @@ class EventProcessor:
 class ActivityRepository:
     def __init__(self, db: Connection):
         self.db = db
+        self.batch_size = 5
 
     def insert_os_events(self, activities: list[OperatingSystemEvent]) -> bool:
         # in SQLite executemany does not return the list of last inserted IDs.
         self.db.executemany("""
             INSERT INTO os_events
-            (title, executable, publisher, description, event_start_time, event_end_time, processing_time, type)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+            (event_id, title, executable, publisher, description, event_start_time, event_end_time, processing_time, type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
         """, (
             (
+                activity.id,
                 activity.title,
                 activity.process,
                 activity.publisher,
