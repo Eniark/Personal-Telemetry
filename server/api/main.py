@@ -65,7 +65,8 @@ async def os_event_endpoint(payload: OSEventSchema):
         processing_time=processing_time,
         category=category,
         publisher=payload.publisher,
-        id=str(uuid4())
+        id=str(uuid4()),
+        previous_events=payload.recent_windows
     )
     event_processor.handle_os_event(event)
     logger.info(f"OS Event: {event.process} - {event.id}")

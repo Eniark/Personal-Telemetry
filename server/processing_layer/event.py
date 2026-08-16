@@ -31,6 +31,7 @@ class OperatingSystemEvent(Event):
     publisher: str
     id: str
     description: str | None = None
+    previous_events: list = field(default=list, kw_only=True)
 
     def __repr__(self):
         return f"<OS Activity: {self.process=}, linked_browser_events={len(self.linked_browser_events)}, {self.category=}>"

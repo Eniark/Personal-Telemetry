@@ -9,10 +9,14 @@ import psutil
 from dotenv import load_dotenv
 import win32api
 from queue import Queue
+from collections import deque
 import threading
 from shared.utils import get_env_variables
 from server.processing_layer.enums import EventType
+import win32gui
+
 load_dotenv()
+
 
 def get_process_info(window_id):
     _, pid = win32process.GetWindowThreadProcessId(window_id)
@@ -68,7 +72,7 @@ def sender():
 
 
 def callback(hook, event, hwnd, idObject, idChild, thread, time):
-    global previous_object
+    global current_object
     if hwnd: # the window ID
         length = user32.GetWindowTextLengthW(hwnd) # needed for C-language as C requires a fixed size memory buffer
         buffer = ctypes.create_unicode_buffer(length + 1)
@@ -78,7 +82,7 @@ def callback(hook, event, hwnd, idObject, idChild, thread, time):
             executable, absolute_path = get_process_info(hwnd)
             publisher_name = get_publisher_name(absolute_path)
             process_category = get_event_category(executable)
-            current_object = {
+            next_object = {
                 "executable": executable,
                 "title": buffer.value,
                 "publisher": publisher_name,
@@ -86,17 +90,25 @@ def callback(hook, event, hwnd, idObject, idChild, thread, time):
                 "event_start_time": datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
             }
 
-            if previous_object:
-                previous_object["event_end_time"] = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
-                event_queue.put(previous_object)
+            if current_object:
+                current_object["event_end_time"] = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
+                current_object['recent_windows'] =  tuple(recent_windows)
+                
+                recent_object = current_object.copy()
+                del recent_object['recent_windows']
+                recent_windows.appendleft(recent_object)
+                event_queue.put(current_object)
+
                 threading.Thread(target=sender, daemon=True).start() # so no blocking of main thread happens
-            previous_object = current_object
+            current_object = next_object
+
 
 
 if __name__=='__main__':
-    previous_object = {}
+    current_object = {}
     
     event_queue = Queue()
+    recent_windows = deque(maxlen=5)
     user32 = ctypes.windll.user32
 
     HOST, PORT = get_env_variables()

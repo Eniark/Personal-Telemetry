@@ -20,6 +20,7 @@ class OSEventSchema(BaseModel):
     category: str
     event_start_time: str
     event_end_time: str
+    recent_windows: list
 
 class BrowserEventSchema(BaseModel):
     url: str

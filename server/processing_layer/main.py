@@ -6,6 +6,7 @@ from server.processing_layer.classifier import Classifier
 from sqlite3 import Connection
 from .enums import EventType
 from server.logger import logger
+import json
 
 class EventProcessor:
     def __init__(self, repository: ActivityRepository, classifiers: list[Classifier]) -> None:
@@ -54,8 +55,19 @@ class ActivityRepository:
         # in SQLite executemany does not return the list of last inserted IDs.
         self.db.executemany("""
             INSERT INTO os_events
-            (event_id, title, executable, publisher, description, event_start_time, event_end_time, processing_time, type)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+            (
+                event_id, 
+                title,
+                executable,
+                publisher,
+                description,
+                event_start_time,
+                event_end_time,
+                processing_time,
+                type,
+                previous_events
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """, (
             (
                 activity.id,
@@ -66,7 +78,8 @@ class ActivityRepository:
                 activity.event_start_time,
                 activity.event_end_time,
                 activity.processing_time,
-                activity.category.value
+                activity.category.value,
+                json.dumps(activity.previous_events)
             )
             for activity in activities
         ))

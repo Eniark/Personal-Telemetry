@@ -19,7 +19,8 @@ with sqlite3.connect(DB_PATH) as conn:
             event_start_time TEXT,
             event_end_time TEXT,
             type TEXT,
-            processing_time TEXT
+            processing_time TEXT,
+            previous_events TEXT
         )
         """)
 
