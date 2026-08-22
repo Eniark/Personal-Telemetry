@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +43,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yhulivatiy.personaltelemetry.app.system.ConnectivityService
 import com.yhulivatiy.personaltelemetry.app.system.PermissionsService
 import com.yhulivatiy.personaltelemetry.app.viewModel.TelemetryViewModel
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.draw.shadow
+import com.yhulivatiy.personaltelemetry.app.utils.WakeOnLan
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {
@@ -56,16 +66,29 @@ fun AppTheme(content: @Composable () -> Unit) {
 fun TelemetryApp(viewModel: TelemetryViewModel) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val permissionsService = PermissionsService(context);
-    val numberOfStoredEvents by viewModel.numberOfStoredEvents.collectAsState(0);
-    val numberOfSentEvents by viewModel.numberOfSentEvents.collectAsState(0);
-    val isTracking by viewModel.isTracking.collectAsStateWithLifecycle() // tracks the state of the variable
+    val permissionsService = PermissionsService(context)
 
-    DisposableEffect(lifecycleOwner) { // Tracks when app becomes active again
+    val numberOfStoredEvents by viewModel.numberOfStoredEvents.collectAsState(0)
+    val numberOfSentEvents by viewModel.numberOfSentEvents.collectAsState(0)
+    val isTracking by viewModel.isTracking.collectAsStateWithLifecycle()
+
+    // Drawer state
+    val drawerState = rememberDrawerState(
+        initialValue = DrawerValue.Closed
+    )
+
+    val scope = rememberCoroutineScope()
+
+    DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.updateUsageStatsPermissions(permissionsService.hasUsageStatsPermissions())
-                viewModel.updateLocationPermissions(permissionsService.hasLocationPermissions())
+                viewModel.updateUsageStatsPermissions(
+                    permissionsService.hasUsageStatsPermissions()
+                )
+
+                viewModel.updateLocationPermissions(
+                    permissionsService.hasLocationPermissions()
+                )
             }
         }
 
@@ -80,7 +103,8 @@ fun TelemetryApp(viewModel: TelemetryViewModel) {
     val statusColor: Color
 
     when {
-        !viewModel.hasUsageStatsPermissions || !viewModel.hasLocationPermissions -> {
+        !viewModel.hasUsageStatsPermissions ||
+                !viewModel.hasLocationPermissions -> {
             statusText = "Permissions Required"
             statusColor = MaterialTheme.colorScheme.warning
         }
@@ -95,29 +119,96 @@ fun TelemetryApp(viewModel: TelemetryViewModel) {
             statusColor = MaterialTheme.colorScheme.success
         }
     }
-    Column( // Vertical layout of child elements
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primary,
-                        MaterialTheme.colorScheme.secondary
+
+    ModalNavigationDrawer(
+
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(drawerContainerColor = Color(0xFF8e94f2)) {
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Utilities",
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                }
+
+                HorizontalDivider()
+
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        onClick = {
+                            scope.launch(Dispatchers.IO) {
+                                try {
+                                    WakeOnLan.wake(
+                                        macAddress = "AC-F2-3C-15-AB-45",
+                                        broadcastAddress = "10.226.122.255"
+                                    )
+                                } catch (e: Exception) {
+                                    Log.e("WOL", "Failed to send WoL", e)
+                                }
+                            }
+                        },
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .height(220.dp)
+                            .width(220.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary
+                        )
+                    ) {
+                        Text(
+                            text = "PC: Turn On",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+    ) {
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.secondary
+                        )
                     )
                 )
+        ) {
+
+            HeaderSection()
+
+            BodySection(
+                viewModel.hasLocationPermissions,
+                setLocationPermissions = viewModel::updateLocationPermissions,
+                isTracking = isTracking,
+                onToggleTracking = viewModel::onToggleTracking
             )
-    ) {
-        HeaderSection()
-        BodySection(
-            viewModel.hasLocationPermissions,
-            setLocationPermissions = viewModel::updateLocationPermissions,
-            isTracking = isTracking,
-            onToggleTracking = viewModel::onToggleTracking
-        )
-        StatusSection(statusText, statusColor, numberOfSentEvents, numberOfStoredEvents)
+
+            StatusSection(
+                statusText,
+                statusColor,
+                numberOfSentEvents,
+                numberOfStoredEvents
+            )
+        }
     }
 }
-
 
 @Composable
 fun HeaderSection() {
