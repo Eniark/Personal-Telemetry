@@ -151,8 +151,8 @@ fun TelemetryApp(viewModel: TelemetryViewModel) {
                             scope.launch(Dispatchers.IO) {
                                 try {
                                     WakeOnLan.wake(
-                                        macAddress = "AC-F2-3C-15-AB-45",
-                                        broadcastAddress = "10.226.122.255"
+                                        macAddress = "34-5A-60-BB-04-C3",
+                                        broadcastAddress = "192.168.0.106"
                                     )
                                 } catch (e: Exception) {
                                     Log.e("WOL", "Failed to send WoL", e)
