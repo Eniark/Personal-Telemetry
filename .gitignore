@@ -12,7 +12,7 @@ telemetry.db
 # =======
 
 # Android App builds
-server/processing_layer/ml_classifier_training
+server/processing_layer/event_classifier/classifier_training.ipynb
 # =======
 
 # Android App builds
