@@ -6,6 +6,7 @@ from server.processing_layer.classifier import Classifier
 from sqlite3 import Connection
 from .enums import EventType
 from server.logger import logger
+from .sql_queries import INSERT_OS_EVENTS_QUERY, INSERT_BROWSER_EVENTS_QUERY
 import json
 
 class EventProcessor:
@@ -53,22 +54,7 @@ class ActivityRepository:
 
     def insert_os_events(self, activities: list[OperatingSystemEvent]) -> bool:
         # in SQLite executemany does not return the list of last inserted IDs.
-        self.db.executemany("""
-            INSERT INTO os_events
-            (
-                event_id, 
-                title,
-                executable,
-                publisher,
-                description,
-                event_start_time,
-                event_end_time,
-                processing_time,
-                type,
-                previous_events
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-        """, (
+        self.db.executemany(INSERT_OS_EVENTS_QUERY, (
             (
                 activity.id,
                 activity.title,
@@ -91,11 +77,7 @@ class ActivityRepository:
         
 
     def insert_browser_events(self, activities: list[BrowserEvent]) -> None:
-        self.db.executemany("""
-            INSERT INTO browser_events
-            (url, title, event_start_time, event_end_time, processing_time, os_event_id)
-            VALUES (?, ?, ?, ?, ?, ?);
-        """, (
+        self.db.executemany(INSERT_BROWSER_EVENTS_QUERY, (
             (
                 activity.url,
                 activity.title,
