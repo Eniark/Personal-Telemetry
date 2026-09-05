@@ -7,7 +7,7 @@ from server.processing_layer.event import PhoneMapper
 from server.processing_layer.main import EventProcessor, ActivityRepository, BrowserEvent, OperatingSystemEvent
 from shared.configs import TIMESTAMP_FORMAT, LISTEN_TO_ALL_DEVICES
 from server.api.models import PhoneEventSchema, OSEventSchema, BrowserEventSchema
-from server.processing_layer.classifier import HardCodedClassifier, MLClassifier, LLMClassifier
+from server.processing_layer.event_classifier.backend.classifier import HardCodedClassifier, MLClassifier, LLMClassifier
 from shared.utils import convert_date_to_readable_format, get_env_variables
 from dotenv import load_dotenv
 from server.processing_layer.enums import EventType

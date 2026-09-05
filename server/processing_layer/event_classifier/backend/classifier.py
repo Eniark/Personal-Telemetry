@@ -1,7 +1,7 @@
 from ollama import chat
-from .enums import EventCategory
+from ...enums import EventCategory
 from abc import ABC, abstractmethod
-from .event import OperatingSystemEvent
+from ...event import OperatingSystemEvent
 class Classifier(ABC):
     @abstractmethod
     def classify(self, event: OperatingSystemEvent) -> EventCategory:

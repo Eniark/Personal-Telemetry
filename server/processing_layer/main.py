@@ -2,7 +2,7 @@ from __future__ import annotations
 import sqlite3
 
 from server.processing_layer.event import BrowserEvent, OperatingSystemEvent, Event
-from server.processing_layer.classifier import Classifier
+from server.processing_layer.event_classifier.backend.classifier import Classifier
 from sqlite3 import Connection
 from .enums import EventType
 from server.logger import logger

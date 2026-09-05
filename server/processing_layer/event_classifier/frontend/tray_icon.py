@@ -1,9 +1,11 @@
 import pystray
 from PIL import Image
 from shared.configs import PROJECT_ROOT
+from ..configs import MEDIA_FOLDER
 
 def create_icon():
-    image = Image.open(PROJECT_ROOT / 'server' / 'processing_layer' / 'event_classifier' / 'media' / 'catppuccin.png')
+    icon_path = MEDIA_FOLDER / 'catppuccin.png'
+    image = Image.open(icon_path)
     return image
 
 
