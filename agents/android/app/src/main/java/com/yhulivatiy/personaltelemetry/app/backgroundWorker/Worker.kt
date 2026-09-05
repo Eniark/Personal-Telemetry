@@ -147,6 +147,7 @@ class CustomWorker(appContext: Context, params: WorkerParameters) : CoroutineWor
                     event.copy(
                         appName = enrichedApp.appName,
                         description = enrichedApp.description,
+                        developer = enrichedApp.developer,
                         isVerified = enrichedApp.isVerified,
                         isSystemEvent = enrichedApp.isSystem
                     )
