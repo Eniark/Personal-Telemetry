@@ -1,7 +1,7 @@
-import sqlite3
 from shared.configs import DB_PATH
 
-with sqlite3.connect(DB_PATH) as conn:
+from .db_connect import create_db_connection
+with create_db_connection(DB_PATH) as conn:
 
     conn.execute("PRAGMA foreign_keys = ON;") # enforces foreign key constraints
     cursor = conn.cursor()

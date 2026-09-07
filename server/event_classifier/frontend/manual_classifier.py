@@ -1,6 +1,9 @@
 import sys
 
-from ..configs import MEDIA_FOLDER
+from server.db.repository import ActivityRepository
+from shared.configs import DB_PATH
+
+from server.event_classifier.configs import MEDIA_FOLDER
 
 from PySide6.QtCore import Qt, QPoint
 from PySide6.QtGui import QIcon
@@ -20,7 +23,7 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QLabel
 )
-
+from server.db.db_connect import create_db_connection
 from .draggable_button import DraggableButton
 from .telemetry_table import TelemetryTable
 from .enums import SlidingStrategy
@@ -28,9 +31,14 @@ from .tab import Tab
 
 
 
+
+db = create_db_connection(DB_PATH)
+repository = ActivityRepository(db)
+
 app = QApplication(sys.argv)
 
 right_arrow_icon = MEDIA_FOLDER / "right-arrow.png"
+print("TESAT", right_arrow_icon)
 
 BTN_WIDTH = 15
 BTN_HEIGHT = 36
@@ -50,7 +58,7 @@ headers = [
     "Event",
     "Category",
 ]
-table = TelemetryTable(n_rows=3, n_cols=2, headers=headers)
+table = TelemetryTable(n_rows=3, n_cols=2, headers=headers, repository=repository)
 panel = TelemetryPanel()
 
 layout = QVBoxLayout(panel)
@@ -74,7 +82,7 @@ panel.move(panel_x, panel_y)
 
 button2.move(100, 100)
 button2.setFixedSize(100, 100)
-panel.setFixedSize(700, 300)
+panel.setFixedSize(1400, 300)
 button2.setParent(panel)
 
 button.dragged.connect(panel.on_button_dragged)

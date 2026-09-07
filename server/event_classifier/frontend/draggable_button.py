@@ -41,14 +41,14 @@ class DraggableButton(QPushButton):
         self._animation = QPropertyAnimation(self, b"pos")
         self._animation.setDuration(self.SLIDE_DURATION)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             self._last_mouse_y = self._global_mouse_y(event)
             self.is_dragged = False
 
         super().mousePressEvent(event)
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, event) -> None:
         if not event.buttons() & Qt.MouseButton.LeftButton:
             super().mouseMoveEvent(event)
             return
@@ -65,7 +65,7 @@ class DraggableButton(QPushButton):
 
         super().mouseMoveEvent(event)
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             self.is_dragged = abs(
                 self._global_mouse_y(event) - self._last_mouse_y # this got broken.

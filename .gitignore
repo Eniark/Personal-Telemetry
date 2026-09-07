@@ -11,8 +11,8 @@ logs.log
 telemetry.db
 # =======
 
-# Android App builds
-server/processing_layer/event_classifier/backend/classifier_training.ipynb
+# Classifier files
+server/event_classifier/backend/classifier_training.ipynb
 # =======
 
 # Android App builds

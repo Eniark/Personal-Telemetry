@@ -1,13 +1,14 @@
 from fastapi import FastAPI
-from shared.configs import DB_PATH
 import sqlite3
 import uvicorn
 import datetime
+from shared.configs import DB_PATH
+from server.db.db_connect import create_db_connection
 from server.processing_layer.event import PhoneMapper
 from server.processing_layer.main import EventProcessor, ActivityRepository, BrowserEvent, OperatingSystemEvent
 from shared.configs import TIMESTAMP_FORMAT, LISTEN_TO_ALL_DEVICES
 from server.api.models import PhoneEventSchema, OSEventSchema, BrowserEventSchema
-from server.processing_layer.event_classifier.backend.classifier import HardCodedClassifier, MLClassifier, LLMClassifier
+from server.event_classifier.backend.classifier import HardCodedClassifier, MLClassifier, LLMClassifier
 from shared.utils import convert_date_to_readable_format, get_env_variables
 from dotenv import load_dotenv
 from server.processing_layer.enums import EventType
@@ -17,24 +18,16 @@ load_dotenv()
 
 app = FastAPI()
 
-def create_db_connection():
-    conn = sqlite3.connect(DB_PATH)
-    try:
-        yield ActivityRepository(conn)
-    finally:
-        conn.close()
+
 
 hardCodedClassifier = HardCodedClassifier()
 mlClassifier = MLClassifier()
 llMClassifier = LLMClassifier()
 
-# add parallel connections to the database?
-db = sqlite3.connect(
-    DB_PATH,
-    check_same_thread=False
-)
-db = ActivityRepository(db)
-event_processor = EventProcessor(db, [hardCodedClassifier, mlClassifier, llMClassifier])
+
+db = create_db_connection(DB_PATH)
+repository = ActivityRepository(db)
+event_processor = EventProcessor(repository, [hardCodedClassifier, mlClassifier, llMClassifier])
 
 @app.post("/browser_event")
 async def browser_event_endpoint(payload: BrowserEventSchema):
