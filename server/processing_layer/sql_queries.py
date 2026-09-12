@@ -27,5 +27,3 @@ SELECT_ALL_EVENTS_QUERY = """
         AS os LEFT JOIN browser_events AS browser
         ON os.id=browser.os_event_id;
 """
-
-# GET_SCHEMA_OF_TABLE = f"PRAGMA table_info({table_name})"

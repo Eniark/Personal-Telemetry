@@ -5,7 +5,7 @@ class EventType(Enum):
     OS = 'os'
     PHONE_OS = 'phone_os'
 
-class EventCategory:
+class EventCategory(Enum):
     WORK = "work"
     STUDYING = "studying"
     GAMING = "gaming"

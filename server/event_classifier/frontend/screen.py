@@ -5,19 +5,16 @@ from shared.configs import DB_PATH
 
 from server.event_classifier.configs import MEDIA_FOLDER
 
-from PySide6.QtCore import Qt, QPoint
-from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QApplication, QPushButton, QWidget
 
 from .draggable_button import DraggableButton
 from .telemetry_panel import TelemetryPanel
 from .enums import SlidingStrategy
 from .telemetry_table import TelemetryTable
 
-from PySide6.QtCore import Qt, QPropertyAnimation, QPoint
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QApplication,
-    QWidget,
+    QPushButton,
     QHBoxLayout,
     QVBoxLayout,
     QTabWidget,
@@ -38,7 +35,6 @@ repository = ActivityRepository(db)
 app = QApplication(sys.argv)
 
 right_arrow_icon = MEDIA_FOLDER / "right-arrow.png"
-print("TESAT", right_arrow_icon)
 
 BTN_WIDTH = 15
 BTN_HEIGHT = 36
@@ -53,12 +49,7 @@ button.setFixedSize(50, 36)
 
 
 
-
-headers = [
-    "Event",
-    "Category",
-]
-table = TelemetryTable(n_rows=3, n_cols=2, headers=headers, repository=repository)
+table = TelemetryTable(repository=repository)
 panel = TelemetryPanel()
 
 layout = QVBoxLayout(panel)

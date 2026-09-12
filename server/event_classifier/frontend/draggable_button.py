@@ -1,4 +1,4 @@
-from PySide6.QtCore import QPoint, QPropertyAnimation, Qt, Signal
+from PySide6.QtCore import QPoint, QPropertyAnimation, Qt, Signal, QEasingCurve
 from PySide6.QtGui import QIcon, QTransform
 from PySide6.QtWidgets import QApplication, QPushButton
 
@@ -92,7 +92,7 @@ class DraggableButton(QPushButton):
         self._animation.start()
 
     def _slide_in(self, screen, panel: TelemetryPanel) -> None:
-        button_x = screen.right() - panel.width()
+        button_x = screen.right() - panel.width() - 50
         panel_x = button_x + self.width()
 
         self.is_slided_in = True

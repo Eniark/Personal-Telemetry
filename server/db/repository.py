@@ -3,6 +3,7 @@ from sqlite3 import Connection
 from server.processing_layer.event import BrowserEvent, OperatingSystemEvent
 from server.processing_layer.sql_queries import INSERT_OS_EVENTS_QUERY, INSERT_BROWSER_EVENTS_QUERY, SELECT_ALL_EVENTS_QUERY
 import json, sqlite3
+from typing import Any
 
 class ActivityRepository:
     def __init__(self, db: Connection):
@@ -48,5 +49,12 @@ class ActivityRepository:
 
         self.db.commit()
 
-    def select_events(self) -> list:
-        return self.db.execute(SELECT_ALL_EVENTS_QUERY).fetchall()
+    def get_events(self, get_headers: bool=True, limit: int|None = None) -> tuple[list|None, list[Any]]:
+        headers = None
+        cursor = self.db.execute(SELECT_ALL_EVENTS_QUERY)
+
+        if get_headers:
+            headers = [value[0] for value in cursor.description]
+        
+        data = cursor.fetchall()
+        return (headers, data)
