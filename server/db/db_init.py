@@ -20,7 +20,10 @@ with create_db_connection(DB_PATH) as conn:
             event_end_time TEXT,
             type TEXT,
             processing_time TEXT,
-            previous_events TEXT
+            previous_events TEXT,
+            category TEXT,
+            classified_at TEXT,
+            classified_by TEXT
         )
         """)
 
@@ -38,8 +41,3 @@ with create_db_connection(DB_PATH) as conn:
             FOREIGN KEY (os_event_id) REFERENCES os_event(event_id) 
         )
         """)
-    # cursor.execute(
-    #     """
-    #         CREATE INDEX IF NOT EXISTS idx_browser_event_id ON browser_events(os_event_id);
-    #     """)
-    
