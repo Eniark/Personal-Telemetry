@@ -58,3 +58,16 @@ class ActivityRepository:
         
         data = cursor.fetchall()
         return (headers, data)
+
+    def update_classification(self, event_id: int, new_class: str):
+        self.db.execute("""
+            UPDATE os_events
+            SET class=?
+            WHERE id=?
+        """,
+        (
+            new_class,
+            event_id
+        ))
+
+        print(event_id, new_class)

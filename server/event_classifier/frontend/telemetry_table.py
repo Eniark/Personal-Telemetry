@@ -63,6 +63,7 @@ class TelemetryTable(QTableWidget):
     def populate_table(self) -> None:
         headers, events = self.repository.get_events(get_headers=True, limit=None)
         events = events[:self.max_rows]
+        print(events)
         column_count = len(events[0]) + len(TelemetryTable.ADDITIONAL_COLUMNS)
 
         self.setRowCount(len(events))
@@ -84,6 +85,8 @@ class TelemetryTable(QTableWidget):
                 self.setItem(row_idx, col_idx, item)
             self.setCellWidget(row_idx, self.headers.index('Class'), event_category_dropdown)
             self.setCellWidget(row_idx, self.headers.index('Action'), action_button)
+            event_id = row[0]
+            action_button.clicked.connect(lambda _, event_id=event_id, dropdown=event_category_dropdown: self.repository.update_classification(event_id=event_id, new_class=dropdown.currentText()))
 
 
         self.__configure_table()

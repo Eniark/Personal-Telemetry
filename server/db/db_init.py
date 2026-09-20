@@ -21,7 +21,7 @@ with create_db_connection(DB_PATH) as conn:
             type TEXT,
             processing_time TEXT,
             previous_events TEXT,
-            category TEXT,
+            class TEXT,
             classified_at TEXT,
             classified_by TEXT
         )

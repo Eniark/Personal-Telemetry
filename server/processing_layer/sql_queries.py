@@ -22,7 +22,7 @@ INSERT_OS_EVENTS_QUERY = """
 """
 
 SELECT_ALL_EVENTS_QUERY = """
-    SELECT os.title, os.executable, os.event_start_time AS os_event_start_time, os.event_end_time AS os_event_end_time,
+    SELECT os.id, os.title, os.executable, os.event_start_time AS os_event_start_time, os.event_end_time AS os_event_end_time,
             browser.url, browser.title AS browser_tab_title FROM os_events
         AS os LEFT JOIN browser_events AS browser
         ON os.id=browser.os_event_id;

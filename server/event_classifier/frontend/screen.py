@@ -1,99 +1,130 @@
 import sys
 
-from server.db.repository import ActivityRepository
-from shared.configs import DB_PATH
-
-from server.event_classifier.configs import MEDIA_FOLDER
-
-
-from .draggable_button import DraggableButton
-from .telemetry_panel import TelemetryPanel
-from .enums import SlidingStrategy
-from .telemetry_table import TelemetryTable
-
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QApplication,
-    QPushButton,
     QHBoxLayout,
-    QVBoxLayout,
+    QPushButton,
     QTabWidget,
-    QLabel
+    QVBoxLayout,
 )
+
 from server.db.db_connect import create_db_connection
+from server.db.repository import ActivityRepository
+from server.event_classifier.configs import MEDIA_FOLDER
+from shared.configs import DB_PATH
+
 from .draggable_button import DraggableButton
-from .telemetry_table import TelemetryTable
 from .enums import SlidingStrategy
 from .tab import Tab
+from .telemetry_panel import TelemetryPanel
+from .telemetry_table import TelemetryTable
 
-
-
-
-db = create_db_connection(DB_PATH)
-repository = ActivityRepository(db)
-
-app = QApplication(sys.argv)
-
-right_arrow_icon = MEDIA_FOLDER / "right-arrow.png"
 
 BTN_WIDTH = 15
 BTN_HEIGHT = 36
-
-screen = app.primaryScreen()
-geometry = screen.availableGeometry()
-button2 = QPushButton()
-
-# Create the edge button
-button = DraggableButton(width=BTN_WIDTH, height=BTN_HEIGHT, icon=QIcon(str(right_arrow_icon)))
-button.setFixedSize(50, 36)
+PANEL_WIDTH = 1400
+PANEL_HEIGHT = 300
 
 
-
-table = TelemetryTable(repository=repository)
-panel = TelemetryPanel()
-
-layout = QVBoxLayout(panel)
-tabs = QTabWidget()
-
-tabs.addTab(Tab(label="Classifier Report"), "Report")
-tabs.addTab(Tab(label='Information'), "Dashboard")
-
-layout.addWidget(tabs)
-layout.addWidget(table)
+def create_repository() -> ActivityRepository:
+    db = create_db_connection(DB_PATH)
+    return ActivityRepository(db)
 
 
-button_x = geometry.right() - button.width()
-button_y = geometry.center().y() - button.height() // 2
-button.move(button_x, button_y)
 
-panel_x = geometry.right()
-panel_y = button_y
+def create_panel(repository: ActivityRepository) -> TelemetryPanel:
 
-panel.move(panel_x, panel_y)
+    def create_tabs() -> QTabWidget:
+        tabs = QTabWidget()
 
-button2.move(100, 100)
-button2.setFixedSize(100, 100)
-panel.setFixedSize(1400, 300)
-button2.setParent(panel)
+        tabs.addTab(Tab(label="Classifier Report"),"Report")
+        tabs.addTab(Tab(label="Information"),"Dashboard")
 
-button.dragged.connect(panel.on_button_dragged)
-button.show()
-panel.show()
+        return tabs
+
+    panel = TelemetryPanel()
+
+    layout = QVBoxLayout(panel)
+    layout.addWidget(create_tabs())
+    layout.addWidget(TelemetryTable(repository=repository))
+
+    panel.setFixedSize(PANEL_WIDTH, PANEL_HEIGHT)
+
+    return panel
 
 
-def on_click():
-    if not button.is_dragged:
-        slide_strategy = (
+def create_button() -> DraggableButton:
+    icon_path = MEDIA_FOLDER / "right-arrow.png"
+
+    button = DraggableButton(
+        width=BTN_WIDTH,
+        height=BTN_HEIGHT,
+        icon=QIcon(str(icon_path)),
+    )
+    button.setFixedSize(50, 36)
+
+    return button
+
+
+def position_widgets(button: DraggableButton, panel: TelemetryPanel) -> None:
+    screen = QApplication.primaryScreen()
+    geometry = screen.availableGeometry()
+
+    button_x = geometry.right() - button.width()
+    button_y = geometry.center().y() - button.height() // 2
+
+    button.move(button_x, button_y)
+    panel.move(geometry.right(), button_y)
+
+
+def connect_signals(
+    button: DraggableButton,
+    panel: TelemetryPanel,
+    quit_button: QPushButton,
+) -> None:
+
+    button.dragged.connect(panel.on_button_dragged)
+
+    def on_button_clicked() -> None:
+        if button.is_dragged:
+            return
+
+        strategy = (
             SlidingStrategy.OUT
             if button.is_slided_in
             else SlidingStrategy.IN
         )
 
-        button.slide(panel=panel, strategy=slide_strategy)
+        button.slide(
+            panel=panel,
+            strategy=strategy,
+        )
 
-button.clicked.connect(on_click)
-button2.clicked.connect(QApplication.quit)
-
-sys.exit(app.exec())
+    button.clicked.connect(on_button_clicked)
+    quit_button.clicked.connect(QApplication.quit)
 
 
+def main() -> int:
+    app = QApplication(sys.argv)
+
+    repository = create_repository()
+
+    panel = create_panel(repository)
+    button = create_button()
+
+    temp_quit_button = QPushButton(parent=panel)
+    temp_quit_button.setFixedSize(100, 100)
+    temp_quit_button.move(100, 100)
+
+    position_widgets(button, panel)
+    connect_signals(button, panel, temp_quit_button)
+
+    button.show()
+    panel.show()
+
+    return app.exec()
+
+
+if __name__ == "__main__":
+    sys.exit(main())
