@@ -2,6 +2,7 @@ from sqlite3 import Connection
 
 from server.processing_layer.event import BrowserEvent, OperatingSystemEvent
 from server.processing_layer.sql_queries import INSERT_OS_EVENTS_QUERY, INSERT_BROWSER_EVENTS_QUERY, SELECT_ALL_EVENTS_QUERY
+from server.event_classifier.backend.classifier import Classification
 import json, sqlite3
 from typing import Any
 
@@ -59,15 +60,19 @@ class ActivityRepository:
         data = cursor.fetchall()
         return (headers, data)
 
-    def update_classification(self, event_id: int, new_class: str):
+    def update_classification(self, event_id: int, classification: Classification):
         self.db.execute("""
             UPDATE os_events
-            SET class=?
+            SET class=?,
+                classified_at=?,
+                classified_by=?
             WHERE id=?
         """,
         (
-            new_class,
+            classification.class_,
+            classification.classified_at,
+            classification.classified_by,
             event_id
         ))
-
-        print(event_id, new_class)
+        self.db.commit()
+        print(event_id, classification)

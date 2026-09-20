@@ -2,6 +2,8 @@ from ollama import chat
 from server.processing_layer.enums import EventCategory
 from abc import ABC, abstractmethod
 from server.processing_layer.event import OperatingSystemEvent
+from dataclasses import dataclass
+from datetime import datetime
 class Classifier(ABC):
     @abstractmethod
     def classify(self, event: OperatingSystemEvent) -> EventCategory:
@@ -35,3 +37,10 @@ class LLMClassifier(Classifier):
         )
 
         print(response.message.content)
+
+
+@dataclass(slots=True, frozen=True)
+class Classification:
+    classified_at: datetime
+    classified_by: str
+    class_: str

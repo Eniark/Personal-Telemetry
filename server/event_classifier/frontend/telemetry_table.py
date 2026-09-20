@@ -1,5 +1,5 @@
 
-
+import datetime
 from PySide6.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from server.processing_layer.enums import EventCategory
+from server.event_classifier.backend.classifier import Classification
 
 from server.db.repository import ActivityRepository
 
@@ -60,10 +61,12 @@ class TelemetryTable(QTableWidget):
             if width:
                 self.setColumnWidth(idx, width)
 
+
+
     def populate_table(self) -> None:
+
         headers, events = self.repository.get_events(get_headers=True, limit=None)
         events = events[:self.max_rows]
-        print(events)
         column_count = len(events[0]) + len(TelemetryTable.ADDITIONAL_COLUMNS)
 
         self.setRowCount(len(events))
@@ -71,11 +74,23 @@ class TelemetryTable(QTableWidget):
 
         self.headers = headers + TelemetryTable.ADDITIONAL_COLUMNS
         self.setHorizontalHeaderLabels(self.headers)
+
+        def update_classification(event_id: str, dropdown: QComboBox):
+            classification = Classification(
+                class_=dropdown.currentText(),
+                classified_at=datetime.datetime.now(),
+                classified_by='user'
+            )
+
+            self.repository.update_classification(event_id=event_id, classification=classification)
+
         for row_idx, row in enumerate(events):
             action_button = QPushButton("Apply")
             event_category_dropdown = QComboBox()
             event_category_dropdown.addItems([category.value for category in EventCategory])
             for col_idx, value in enumerate(row):
+                if type(value) != str and value!=None:
+                    value = str(value)
                 item = QTableWidgetItem(value)
                 column_name = self.headers[col_idx]
                 column_config = TelemetryTable.__COLUMN_CONFIGS.get(column_name, {})
@@ -86,7 +101,7 @@ class TelemetryTable(QTableWidget):
             self.setCellWidget(row_idx, self.headers.index('Class'), event_category_dropdown)
             self.setCellWidget(row_idx, self.headers.index('Action'), action_button)
             event_id = row[0]
-            action_button.clicked.connect(lambda _, event_id=event_id, dropdown=event_category_dropdown: self.repository.update_classification(event_id=event_id, new_class=dropdown.currentText()))
+            action_button.clicked.connect(lambda _, event_id=event_id, dropdown=event_category_dropdown: update_classification(event_id=event_id, dropdown=dropdown))
 
 
         self.__configure_table()
