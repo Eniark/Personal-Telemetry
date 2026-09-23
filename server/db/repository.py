@@ -1,7 +1,7 @@
 from sqlite3 import Connection
 
 from server.processing_layer.event import BrowserEvent, OperatingSystemEvent
-from server.processing_layer.sql_queries import INSERT_OS_EVENTS_QUERY, INSERT_BROWSER_EVENTS_QUERY, SELECT_ALL_EVENTS_QUERY
+from server.processing_layer.sql_queries import INSERT_OS_EVENTS_QUERY, INSERT_BROWSER_EVENTS_QUERY, SELECT_OS_EVENTS_QUERY, SELECT_BROWSER_EVENTS_QUERY, UPDATE_EVENT_CLASS_QUERY
 from server.event_classifier.backend.classifier import Classification
 import json, sqlite3
 from typing import Any
@@ -49,25 +49,37 @@ class ActivityRepository:
         ))
 
         self.db.commit()
+    
+    def _get_events(
+        self,
+        query: str,
+        params: tuple = (),
+        get_headers: bool = True,
+    ) -> tuple[list | None, list[Any]]:
 
-    def get_events(self, get_headers: bool=True, limit: int|None = None) -> tuple[list|None, list[Any]]:
+        cursor = self.db.execute(query, params)
+
+        headers = (
+            [column[0] for column in cursor.description]
+            if get_headers
+            else None
+        )
+
+        return headers, cursor.fetchall()
+
+    def get_events(self, query: str, params: tuple=(), get_headers: bool=True, limit: int|None = None) -> tuple[list|None, list[Any]]:
         headers = None
-        cursor = self.db.execute(SELECT_ALL_EVENTS_QUERY)
+        cursor = self.db.execute(query, params)
 
         if get_headers:
             headers = [value[0] for value in cursor.description]
         
         data = cursor.fetchall()
         return (headers, data)
+    
 
     def update_classification(self, event_id: int, classification: Classification):
-        self.db.execute("""
-            UPDATE os_events
-            SET class=?,
-                classified_at=?,
-                classified_by=?
-            WHERE id=?
-        """,
+        self.db.execute(UPDATE_EVENT_CLASS_QUERY,
         (
             classification.class_,
             classification.classified_at,

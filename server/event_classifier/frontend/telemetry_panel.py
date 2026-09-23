@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 
 class TelemetryPanel(QWidget):
     SLIDE_DURATION = 100
+    PANEL_WIDTH = 1400
     def __init__(self):
         super().__init__()
 
@@ -31,6 +32,9 @@ class TelemetryPanel(QWidget):
                 border-radius: 10px;
             }
         """)
+
+        self.setFixedWidth(TelemetryPanel.PANEL_WIDTH)
+
         
     def on_button_dragged(self, dy: int):
         self.move(self.x(), self.y() + dy)

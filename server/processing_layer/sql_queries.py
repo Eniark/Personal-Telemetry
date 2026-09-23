@@ -21,10 +21,20 @@ INSERT_OS_EVENTS_QUERY = """
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 """
 
-SELECT_ALL_EVENTS_QUERY = """
-    SELECT os.id, os.title, os.executable, os.event_start_time AS os_event_start_time, os.event_end_time AS os_event_end_time,
-            browser.url, browser.title AS browser_tab_title FROM os_events
-        AS os LEFT JOIN browser_events AS browser
-        ON os.id=browser.os_event_id
-        WHERE class IS NULL;
+SELECT_OS_EVENTS_QUERY = """
+    SELECT id, event_id, type, title, executable, event_start_time, event_end_time FROM os_events
+    WHERE class IS NULL;
+"""
+
+SELECT_BROWSER_EVENTS_QUERY = """
+    SELECT id, url, title, event_start_time, event_end_time FROM browser_events
+    WHERE os_event_id=?
+"""
+
+UPDATE_EVENT_CLASS_QUERY = """
+    UPDATE os_events
+    SET class=?,
+        classified_at=?,
+        classified_by=?
+    WHERE id=?
 """

@@ -11,7 +11,7 @@ DB_NAME = "telemetry.db"
 DB_PATH = PROJECT_ROOT / "server" / "db" / DB_NAME
 
 # Data Format Settings
-TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
+TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 # connection settings
 LISTEN_TO_ALL_DEVICES = True

@@ -18,19 +18,12 @@ from .draggable_button import DraggableButton
 from .enums import SlidingStrategy
 from .tab import Tab
 from .telemetry_panel import TelemetryPanel
-from .telemetry_table import TelemetryTable
-
-
-BTN_WIDTH = 15
-BTN_HEIGHT = 36
-PANEL_WIDTH = 1400
-PANEL_HEIGHT = 300
+from .table_widgets import OsEventsTable, BrowserEventsTable
 
 
 def create_repository() -> ActivityRepository:
     db = create_db_connection(DB_PATH)
     return ActivityRepository(db)
-
 
 
 def create_panel(repository: ActivityRepository) -> TelemetryPanel:
@@ -44,17 +37,19 @@ def create_panel(repository: ActivityRepository) -> TelemetryPanel:
         return tabs
 
     panel = TelemetryPanel()
-
     layout = QVBoxLayout(panel)
+    browser_events_table = BrowserEventsTable(repository=repository)
+    os_events_table = OsEventsTable(repository=repository, browser_events_table=browser_events_table, layout=layout)
     layout.addWidget(create_tabs())
-    layout.addWidget(TelemetryTable(repository=repository))
-
-    panel.setFixedSize(PANEL_WIDTH, PANEL_HEIGHT)
+    layout.addWidget(os_events_table)
 
     return panel
 
 
 def create_button() -> DraggableButton:
+
+    BTN_WIDTH = 50
+    BTN_HEIGHT = 36
     icon_path = MEDIA_FOLDER / "right-arrow.png"
 
     button = DraggableButton(
@@ -62,7 +57,6 @@ def create_button() -> DraggableButton:
         height=BTN_HEIGHT,
         icon=QIcon(str(icon_path)),
     )
-    button.setFixedSize(50, 36)
 
     return button
 
