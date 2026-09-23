@@ -60,6 +60,14 @@ class TelemetryTable(QTableWidget):
             width = column_config.get("width")
             if width:
                 self.setColumnWidth(idx, width)
+    
+    def delete_record(self):
+        button = self.sender()
+
+        for row in range(self.rowCount()):
+            if self.cellWidget(row, self.headers.index('Action')) is button:
+                self.removeRow(row)
+                break
 
 
 
@@ -102,6 +110,7 @@ class TelemetryTable(QTableWidget):
             self.setCellWidget(row_idx, self.headers.index('Action'), action_button)
             event_id = row[0]
             action_button.clicked.connect(lambda _, event_id=event_id, dropdown=event_category_dropdown: update_classification(event_id=event_id, dropdown=dropdown))
+            action_button.clicked.connect(self.delete_record)
 
 
         self.__configure_table()
