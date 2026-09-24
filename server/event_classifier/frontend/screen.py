@@ -16,9 +16,9 @@ from shared.configs import DB_PATH
 
 from .draggable_button import DraggableButton
 from .enums import SlidingStrategy
-from .tab import Tab
+from .tables.tab import Tab
 from .telemetry_panel import TelemetryPanel
-from .table_widgets import OsEventsTable, BrowserEventsTable
+from .tables.table_widgets import OsEventsTable, BrowserEventsTable
 
 
 def create_repository() -> ActivityRepository:
