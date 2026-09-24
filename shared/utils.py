@@ -1,5 +1,4 @@
 import datetime
-from dotenv import load_dotenv
 import os
 
 from shared.configs import TIMESTAMP_FORMAT

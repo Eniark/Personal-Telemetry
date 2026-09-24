@@ -50,23 +50,6 @@ class ActivityRepository:
 
         self.db.commit()
     
-    def _get_events(
-        self,
-        query: str,
-        params: tuple = (),
-        get_headers: bool = True,
-    ) -> tuple[list | None, list[Any]]:
-
-        cursor = self.db.execute(query, params)
-
-        headers = (
-            [column[0] for column in cursor.description]
-            if get_headers
-            else None
-        )
-
-        return headers, cursor.fetchall()
-
     def get_events(self, query: str, params: tuple=(), get_headers: bool=True, limit: int|None = None) -> tuple[list|None, list[Any]]:
         headers = None
         cursor = self.db.execute(query, params)
@@ -87,4 +70,3 @@ class ActivityRepository:
             event_id
         ))
         self.db.commit()
-        print(event_id, classification)

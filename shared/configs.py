@@ -1,4 +1,3 @@
-# NOTE: move the application-related libraries to their respective directories
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
