@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QVBoxLayout,
 )
+from PySide6.QtCore import Qt
 
 from server.db.db_connect import create_db_connection
 from server.db.repository import ActivityRepository
@@ -16,7 +17,6 @@ from shared.configs import DB_PATH
 
 from .draggable_button import DraggableButton
 from .enums import SlidingStrategy
-from .tables.tab import Tab
 from .telemetry_panel import TelemetryPanel
 from .tables.table_widgets import OsEventsTable, BrowserEventsTable
 
@@ -28,20 +28,30 @@ def create_repository() -> ActivityRepository:
 
 def create_panel(repository: ActivityRepository) -> TelemetryPanel:
 
-    def create_tabs() -> QTabWidget:
-        tabs = QTabWidget()
+    refresh_button = QPushButton('Refresh')
+    refresh_button.setFixedSize(100, 25)
 
-        tabs.addTab(Tab(label="Classifier Report"),"Report")
-        tabs.addTab(Tab(label="Information"),"Dashboard")
+    temp_clear_table_btn = QPushButton('Clear')
+    temp_clear_table_btn.setFixedSize(100, 25)
 
-        return tabs
+    temp_quit_btn = QPushButton('Exit')
+    temp_quit_btn.setFixedSize(100, 25)
 
     panel = TelemetryPanel()
     layout = QVBoxLayout(panel)
+    button_layout = QHBoxLayout()
     browser_events_table = BrowserEventsTable(repository=repository)
     os_events_table = OsEventsTable(repository=repository, browser_events_table=browser_events_table, layout=layout)
-    layout.addWidget(create_tabs())
+    button_layout.addWidget(refresh_button)
+    button_layout.addWidget(temp_clear_table_btn)
+    button_layout.addWidget(temp_quit_btn)
+    button_layout.addStretch()
+
+    layout.addLayout(button_layout)
     layout.addWidget(os_events_table)
+    refresh_button.clicked.connect(os_events_table.populate_table)
+    temp_clear_table_btn.clicked.connect(os_events_table.temp__clear_tables)
+    temp_quit_btn.clicked.connect(QApplication.quit)
 
     return panel
 
@@ -75,7 +85,6 @@ def position_widgets(button: DraggableButton, panel: TelemetryPanel) -> None:
 def connect_signals(
     button: DraggableButton,
     panel: TelemetryPanel,
-    quit_button: QPushButton,
 ) -> None:
 
     button.dragged.connect(panel.on_button_dragged)
@@ -96,7 +105,6 @@ def connect_signals(
         )
 
     button.clicked.connect(on_button_clicked)
-    quit_button.clicked.connect(QApplication.quit)
 
 
 def main() -> int:
@@ -107,12 +115,8 @@ def main() -> int:
     panel = create_panel(repository)
     button = create_button()
 
-    temp_quit_button = QPushButton(parent=panel)
-    temp_quit_button.setFixedSize(100, 100)
-    temp_quit_button.move(100, 100)
-
     position_widgets(button, panel)
-    connect_signals(button, panel, temp_quit_button)
+    connect_signals(button, panel)
 
     button.show()
     panel.show()

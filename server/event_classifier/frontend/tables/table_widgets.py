@@ -23,13 +23,9 @@ class TelemetryTable(QTableWidget):
         self.repository = repository
         self.max_rows = 20
 
-    def _preconfigure_table(self):
-        self.visible_headers = [
-            column_config.title
-            for column_config in self.COLUMN_CONFIGS.values()
-            if not column_config.hidden
-        ]
+    def _preconfigure_table(self, n_rows: int):
         self.n_cols = len(self.COLUMN_CONFIGS)
+        self.n_rows = n_rows
 
         self.setFixedHeight(self.TABLE_HEIGHT)
         widget_header = self.horizontalHeader()
@@ -54,7 +50,7 @@ class TelemetryTable(QTableWidget):
 
     def _postconfigure_table(self):
         for row_idx in range(self.rowCount()):
-            for col_idx in range(self.columnCount() - 1):
+            for col_idx in range(self.columnCount()):
                 column_config = self.get_column(col_idx)
                 item = self.item(row_idx, col_idx)
 
@@ -73,7 +69,7 @@ class TelemetryTable(QTableWidget):
 class BrowserEventsTable(TelemetryTable):
     COLUMN_CONFIGS = {
         "id": Column(title="id", width=75),
-        "url": Column(title="url", width=400),
+        "url": Column(title="url", width=450),
         "title": Column(title="title", width=300),
         "event_start_time": Column(title="Event Start Time", text_alignment="center"),
         "event_end_time": Column(title="Event End Time", text_alignment="center"),
@@ -82,16 +78,12 @@ class BrowserEventsTable(TelemetryTable):
         super().__init__(repository)
         self.populate_table()
 
-    def _preconfigure_table(self):
-        super()._preconfigure_table()
-
     def populate_table(self, os_event_id: str|None = None) -> None:
 
         events = self.repository.get_events(query=SELECT_BROWSER_EVENTS_QUERY, params=(os_event_id,), limit=None)
         events = events[:self.max_rows]
-        self.n_rows = len(events)
 
-        self._preconfigure_table()
+        self._preconfigure_table(n_rows=len(events))
         for row_idx, row in enumerate(events):
 
             for col_idx, value in enumerate(row):
@@ -121,7 +113,7 @@ class OsEventsTable(TelemetryTable):
         button = self.sender()
 
         for row in range(self.rowCount()):
-            if self.cellWidget(row, self.visible_headers.index('Action')) is button:
+            if self.cellWidget(row, self.get_column_idx('action')) is button:
                 self.removeRow(row)
                 break
     
@@ -144,13 +136,16 @@ class OsEventsTable(TelemetryTable):
         )
 
         self.repository.update_classification(event_id=event_id, classification=classification)
+
+    def temp__clear_tables(self) -> None:
+        self.repository.temp__clear_tables()
+        self.setRowCount(0)
         
     def populate_table(self) -> None:
         events = self.repository.get_events(query=SELECT_OS_EVENTS_QUERY, limit=None)
         events = events[:self.max_rows]
-        self.n_rows = len(events)
   
-        self._preconfigure_table()
+        self._preconfigure_table(n_rows=len(events))
         for row_idx, row in enumerate(events):
             action_button = QPushButton("Apply")
             event_category_dropdown = QComboBox()
