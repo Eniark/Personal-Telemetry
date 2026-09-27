@@ -9,7 +9,7 @@ from typing import Any
 class ActivityRepository:
     def __init__(self, db: Connection):
         self.db = db
-        self.batch_size = 5
+        self.batch_size = 1
 
     def insert_os_events(self, activities: list[OperatingSystemEvent]) -> bool:
         # in SQLite executemany does not return the list of last inserted IDs.

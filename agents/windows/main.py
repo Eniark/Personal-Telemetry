@@ -64,7 +64,12 @@ def sender():
     while True:
         data = event_queue.get()
         try:
-            print(data)
+            print(
+                data["executable"],
+                data["title"],
+                data["publisher"],
+                data["category"],
+            )
             requests.post(f"http://{HOST}:{PORT}/os_event", json=data)
         finally:
             event_queue.task_done()
