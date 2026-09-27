@@ -50,15 +50,10 @@ class ActivityRepository:
 
         self.db.commit()
     
-    def get_events(self, query: str, params: tuple=(), get_headers: bool=True, limit: int|None = None) -> tuple[list|None, list[Any]]:
-        headers = None
+    def get_events(self, query: str, params: tuple=(), limit: int|None = None) -> tuple[list|None, list[Any]]:
         cursor = self.db.execute(query, params)
-
-        if get_headers:
-            headers = [value[0] for value in cursor.description]
-        
         data = cursor.fetchall()
-        return (headers, data)
+        return data
     
 
     def update_classification(self, event_id: int, classification: Classification):

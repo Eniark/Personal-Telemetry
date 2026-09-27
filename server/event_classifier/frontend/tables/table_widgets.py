@@ -22,23 +22,31 @@ class TelemetryTable(QTableWidget):
         super().__init__()
         self.repository = repository
         self.max_rows = 20
-        self.visible_headers = list(filter(lambda column_config: not column_config.hidden, self.COLUMN_CONFIGS))
 
     def _preconfigure_table(self):
+        self.visible_headers = [
+            column_config.title
+            for column_config in self.COLUMN_CONFIGS.values()
+            if not column_config.hidden
+        ]
+        self.n_cols = len(self.COLUMN_CONFIGS)
+
         self.setFixedHeight(self.TABLE_HEIGHT)
         widget_header = self.horizontalHeader()
-        widget_header.setSectionResizeMode(QHeaderView.Stretch)
-        widget_header.setSectionResizeMode(0, QHeaderView.Fixed)
 
         self.setRowCount(self.n_rows)
         self.setColumnCount(self.n_cols)
-        self.setHorizontalHeaderLabels(self.visible_headers)
-        
-        for idx, name in enumerate(self.visible_headers):
+        self.setHorizontalHeaderLabels(self.COLUMN_CONFIGS)
+
+        for idx, name in enumerate(self.COLUMN_CONFIGS):
             column_config = self.COLUMN_CONFIGS.get(name)
             if column_config:
                 if column_config.width is not None:
+                    widget_header.setSectionResizeMode(idx, QHeaderView.Interactive)
                     self.setColumnWidth(idx, column_config.width)
+                else:
+                    widget_header.setSectionResizeMode(idx, QHeaderView.Stretch)
+                    
 
                 if column_config.hidden:
                     self.setColumnHidden(idx, True)
@@ -46,16 +54,26 @@ class TelemetryTable(QTableWidget):
     def _postconfigure_table(self):
         for row_idx in range(self.rowCount()):
             for col_idx in range(self.columnCount() - 1):
-                column_name = self.visible_headers[col_idx]
-                column_config = self.COLUMN_CONFIGS.get(column_name)
+                column_config = self.get_column(col_idx)
                 item = self.item(row_idx, col_idx)
 
 
                 if item and column_config and column_config.text_alignment == "center":
                     item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+    
+    def get_column_idx(self, name: str) -> int:
+        return list(self.COLUMN_CONFIGS).index(name)
+    
+    def get_column(self, idx: str) -> Column:
+        column_key = list(self.COLUMN_CONFIGS)[idx]
+        return self.COLUMN_CONFIGS.get(column_key)
+
 
 class BrowserEventsTable(TelemetryTable):
     COLUMN_CONFIGS = {
+        "id": Column(title="id", width=75),
+        "url": Column(title="url", width=400),
+        "title": Column(title="title", width=300),
         "event_start_time": Column(title="Event Start Time", text_alignment="center"),
         "event_end_time": Column(title="Event End Time", text_alignment="center"),
     }
@@ -68,15 +86,9 @@ class BrowserEventsTable(TelemetryTable):
 
     def populate_table(self, os_event_id: str|None = None) -> None:
 
-        headers, events = self.repository.get_events(query=SELECT_BROWSER_EVENTS_QUERY, params=(os_event_id,), get_headers=True, limit=None)
+        events = self.repository.get_events(query=SELECT_BROWSER_EVENTS_QUERY, params=(os_event_id,), limit=None)
         events = events[:self.max_rows]
-        query_column_count = 0
-        if len(events) > 0:
-            query_column_count = len(events[0])
-        self.n_cols = query_column_count
         self.n_rows = len(events)
-        headers = list(map(lambda x: OsEventsTable.map_headers_to_titles(x, self.COLUMN_CONFIGS), headers))
-        self.visible_headers = headers
 
         self._preconfigure_table()
         for row_idx, row in enumerate(events):
@@ -88,32 +100,22 @@ class BrowserEventsTable(TelemetryTable):
 
 class OsEventsTable(TelemetryTable):
     COLUMN_CONFIGS = {
-        "title": Column(title="title", width=250),
+        "id": Column(title="id", width=75),
         "event_id": Column(title="Event Id", hidden=True),
         "type": Column(title="Type", hidden=True),
-        "executable": Column(title="Executable", width=100),
+        "title": Column(title="title", width=400),
+        "executable": Column(title="Executable", width=200),
         "event_start_time": Column(title="Event Start Time", text_alignment="center"),
         "event_end_time": Column(title="Event End Time", text_alignment="center"),
         "class": Column(title="Proposed Class", width=100, text_alignment="center"),
-        "action": Column(title="Action", width=100, text_alignment="center"),
+        "action": Column(title="Action", width=75, text_alignment="center"),
     }
-    ADDITIONAL_COLUMNS = [COLUMN_CONFIGS['class'].title, COLUMN_CONFIGS['action'].title]
     def __init__(self, repository: ActivityRepository, browser_events_table: BrowserEventsTable, layout: QVBoxLayout):
         super().__init__(repository)
         self.browser_events_table = browser_events_table
         self.layout = layout
         self.populate_table()
     
-
-    def _preconfigure_table(self):
-        widget_header = self.horizontalHeader()
-        widget_header.setSectionResizeMode(self.visible_headers.index('id'), QHeaderView.Fixed)
-        widget_header.setSectionResizeMode(6, QHeaderView.Fixed)
-        widget_header.setSectionResizeMode(7, QHeaderView.Fixed)
-
-        super()._preconfigure_table()
-        
-
     def delete_record(self) -> None:
         button = self.sender()
 
@@ -141,27 +143,12 @@ class OsEventsTable(TelemetryTable):
         )
 
         self.repository.update_classification(event_id=event_id, classification=classification)
-    
-    @staticmethod
-    def map_headers_to_titles(header: str, mapping: dict[str, Column]):
-        column_config = mapping.get(header)
-        if column_config is not None:
-            return column_config.title
-        else:
-            return header
         
     def populate_table(self) -> None:
-
-        headers, events = self.repository.get_events(query=SELECT_OS_EVENTS_QUERY, get_headers=True, limit=None)
+        events = self.repository.get_events(query=SELECT_OS_EVENTS_QUERY, limit=None)
         events = events[:self.max_rows]
         self.n_rows = len(events)
-        if self.n_rows > 0:
-            self.n_cols = len(events[0])
-        self.n_cols = self.n_cols + len(OsEventsTable.ADDITIONAL_COLUMNS)
-        headers = list(map(lambda x: OsEventsTable.map_headers_to_titles(x, self.COLUMN_CONFIGS), headers))
-        self.visible_headers = headers + OsEventsTable.ADDITIONAL_COLUMNS
-
-
+  
         self._preconfigure_table()
         for row_idx, row in enumerate(events):
             action_button = QPushButton("Apply")
@@ -170,8 +157,8 @@ class OsEventsTable(TelemetryTable):
             for col_idx, value in enumerate(row):
                 value = str(value)
                 self.setItem(row_idx, col_idx, QTableWidgetItem(value))
-            self.setCellWidget(row_idx, self.visible_headers.index(self.COLUMN_CONFIGS['class'].title), event_category_dropdown)
-            self.setCellWidget(row_idx, self.visible_headers.index(self.COLUMN_CONFIGS['action'].title), action_button)
+            self.setCellWidget(row_idx, self.get_column_idx('class'), event_category_dropdown)
+            self.setCellWidget(row_idx, self.get_column_idx('action'), action_button)
             event_id = row[0]
             action_button.clicked.connect(lambda _, event_id=event_id, dropdown=event_category_dropdown: self.update_classification(event_id=event_id, dropdown=dropdown))
             action_button.clicked.connect(self.delete_record)
