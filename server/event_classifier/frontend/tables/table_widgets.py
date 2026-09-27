@@ -36,7 +36,8 @@ class TelemetryTable(QTableWidget):
 
         self.setRowCount(self.n_rows)
         self.setColumnCount(self.n_cols)
-        self.setHorizontalHeaderLabels(self.COLUMN_CONFIGS)
+        user_friendly_column_names = [column_config.title or key for key, column_config in self.COLUMN_CONFIGS.items()]
+        self.setHorizontalHeaderLabels(user_friendly_column_names)
 
         for idx, name in enumerate(self.COLUMN_CONFIGS):
             column_config = self.COLUMN_CONFIGS.get(name)
