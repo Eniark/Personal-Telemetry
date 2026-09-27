@@ -31,7 +31,7 @@ class OperatingSystemEvent(Event):
     publisher: str
     id: str
     description: str | None = None
-    previous_events: list = field(default=list, kw_only=True)
+    previous_events: list = field(default_factory=list, kw_only=True)
 
     def __repr__(self):
         return f"<OS Activity: {self.process=}, {self.category=}>"
