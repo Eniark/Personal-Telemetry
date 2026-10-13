@@ -6,8 +6,8 @@ telemetryEnv/
 # =======
 
 # Logs / data
-Logs/
-logs.log
+logs/
+!logs/.gitkeep
 telemetry.db
 # =======
 
