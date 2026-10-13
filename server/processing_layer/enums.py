@@ -6,10 +6,10 @@ class EventType(Enum):
     PHONE_OS = 'phone_os'
 
 class EventCategory(Enum):
-    WORK = "work"
     STUDYING = "studying"
     GAMING = "gaming"
     SOCIAL_MEDIA = "social_media"
+    ENTERTAINMENT = 'entertainment'
     MUSIC = "music"
     SHOPPING = "shopping"
     NEWS = "news"
