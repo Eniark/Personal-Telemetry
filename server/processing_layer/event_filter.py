@@ -1,7 +1,7 @@
 
 
 
-from .event import EventType
+from .event import OperatingSystemEvent
 
 
 class EventFilter:
@@ -15,7 +15,7 @@ class EventFilter:
     ]
     
     def is_valid_event(self, event):
-        if event.category == EventType.OS:
+        if isinstance(event, OperatingSystemEvent):
             return event.process not in EventFilter.IGNORED_PROCESSES
         else:
             return event.url not in EventFilter.IGRNORED_URLS
