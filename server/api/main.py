@@ -15,11 +15,13 @@ from server.processing_layer.enums import EventType
 from server.logger import logger
 from uuid import uuid4
 from opentelemetry import trace
+from .middleware import register_middleware
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 load_dotenv()
 
 app = FastAPI()
+register_middleware(app)
 FastAPIInstrumentor().instrument_app(app)
 tracer = trace.get_tracer(__name__)
 
@@ -65,11 +67,9 @@ async def os_event_endpoint(payload: OSEventSchema):
         id=str(uuid4()),
         previous_events=payload.recent_windows
     )
-    logger.info(f"OS Event Start: {event.process} - {event.id}")
+    logger.info(f"OS Event: {event.process} - {event.id}")
     with tracer.start_as_current_span('handle_os_event'):
         event_processor.handle_os_event(event)
-
-    logger.info(f"OS Event End: {event.process} - {event.id}\n")
     return {"ok": True}
 
 @app.post("/phone_event")

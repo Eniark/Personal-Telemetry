@@ -48,8 +48,6 @@ class TelemetryRepository:
         except sqlite3.Error as e:
             print(e)
 
-        self.db.commit()
-    
     def get_events(self, query: str, params: tuple=(), limit: int|None = None) -> tuple[list|None, list[Any]]:
         cursor = self.db.execute(query, params)
         data = cursor.fetchall()
