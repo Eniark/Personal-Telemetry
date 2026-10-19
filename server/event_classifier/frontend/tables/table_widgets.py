@@ -12,13 +12,13 @@ from PySide6.QtCore import Qt
 from server.processing_layer.enums import EventCategory
 from server.event_classifier.backend.classifier import Classification
 from server.processing_layer.sql_queries import SELECT_OS_EVENTS_QUERY, SELECT_BROWSER_EVENTS_QUERY
-from server.db.repository import ActivityRepository
+from server.db.repository import TelemetryRepository
 from server.processing_layer.enums import EventType
 from .column import Column
 
 class TelemetryTable(QTableWidget):
     TABLE_HEIGHT = 300
-    def __init__(self, repository: ActivityRepository):
+    def __init__(self, repository: TelemetryRepository):
         super().__init__()
         self.repository = repository
         self.max_rows = 20
@@ -74,7 +74,7 @@ class BrowserEventsTable(TelemetryTable):
         "event_start_time": Column(title="Event Start Time", text_alignment="center"),
         "event_end_time": Column(title="Event End Time", text_alignment="center"),
     }
-    def __init__(self, repository: ActivityRepository):
+    def __init__(self, repository: TelemetryRepository):
         super().__init__(repository)
         self.populate_table()
 
@@ -103,7 +103,7 @@ class OsEventsTable(TelemetryTable):
         "class": Column(title="Proposed Class", width=100, text_alignment="center"),
         "action": Column(title="Action", width=75, text_alignment="center"),
     }
-    def __init__(self, repository: ActivityRepository, browser_events_table: BrowserEventsTable, layout: QVBoxLayout):
+    def __init__(self, repository: TelemetryRepository, browser_events_table: BrowserEventsTable, layout: QVBoxLayout):
         super().__init__(repository)
         self.browser_events_table = browser_events_table
         self.layout = layout

@@ -1,17 +1,18 @@
 from sqlite3 import Connection
 
+from server.processing_layer.enums import EventType
 from server.processing_layer.event import BrowserEvent, OperatingSystemEvent
-from server.processing_layer.sql_queries import INSERT_OS_EVENTS_QUERY, INSERT_BROWSER_EVENTS_QUERY, SELECT_OS_EVENTS_QUERY, SELECT_BROWSER_EVENTS_QUERY, UPDATE_EVENT_CLASS_QUERY
+from server.processing_layer.sql_queries import INSERT_OS_EVENTS_QUERY, INSERT_BROWSER_EVENTS_QUERY, UPDATE_EVENT_CLASS_QUERY
 from server.event_classifier.backend.classifier import Classification
 import json, sqlite3
 from typing import Any
 
-class ActivityRepository:
+class TelemetryRepository:
     def __init__(self, db: Connection):
         self.db = db
         self.batch_size = 1
 
-    def insert_os_events(self, activities: list[OperatingSystemEvent]) -> bool:
+    def insert_events(self, events: dict[EventType, list[OperatingSystemEvent]]) -> bool:
         # in SQLite executemany does not return the list of last inserted IDs.
         self.db.executemany(INSERT_OS_EVENTS_QUERY, (
             (
@@ -26,16 +27,9 @@ class ActivityRepository:
                 activity.category.value,
                 json.dumps(activity.previous_events)
             )
-            for activity in activities
+            for activity in events[EventType.OS]
         ))
-        try:
-            self.db.commit()
-            return True
-        except sqlite3.Error as e:
-            print(e)
-        
 
-    def insert_browser_events(self, activities: list[BrowserEvent]) -> None:
         self.db.executemany(INSERT_BROWSER_EVENTS_QUERY, (
             (
                 activity.url,
@@ -45,8 +39,14 @@ class ActivityRepository:
                 activity.processing_time,
                 activity.os_event_id
             )
-            for activity in activities
+            for activity in events[EventType.BROWSER]
         ))
+
+        try:
+            self.db.commit()
+            return True
+        except sqlite3.Error as e:
+            print(e)
 
         self.db.commit()
     

@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 
 from server.db.db_connect import create_db_connection
-from server.db.repository import ActivityRepository
+from server.db.repository import TelemetryRepository
 from server.event_classifier.configs import MEDIA_FOLDER
 from shared.configs import DB_PATH
 
@@ -21,12 +21,12 @@ from .telemetry_panel import TelemetryPanel
 from .tables.table_widgets import OsEventsTable, BrowserEventsTable
 
 
-def create_repository() -> ActivityRepository:
+def create_repository() -> TelemetryRepository:
     db = create_db_connection(DB_PATH)
-    return ActivityRepository(db)
+    return TelemetryRepository(db)
 
 
-def create_panel(repository: ActivityRepository) -> TelemetryPanel:
+def create_panel(repository: TelemetryRepository) -> TelemetryPanel:
 
     refresh_button = QPushButton('Refresh')
     refresh_button.setFixedSize(100, 25)

@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-from server.db.repository import ActivityRepository
+from server.db.repository import TelemetryRepository
 from server.processing_layer.event import BrowserEvent, OperatingSystemEvent, Event
 from server.event_classifier.backend.classifier import Classifier
 from .enums import EventType
@@ -10,7 +8,7 @@ from opentelemetry import trace
 tracer = trace.get_tracer(__name__)
 
 class EventProcessor:
-    def __init__(self, repository: ActivityRepository, classifiers: list[Classifier]) -> None:
+    def __init__(self, repository: TelemetryRepository, classifiers: list[Classifier]) -> None:
         self.repository = repository
         self.events: list[Event] = {
             category: [] 
@@ -22,12 +20,13 @@ class EventProcessor:
     def _flush_if_needed(self) -> None:  
         if len(self.events[EventType.OS]) > self.repository.batch_size:    
             with tracer.start_as_current_span('insert_os_events_into_db'):
-                successful_transaction = self.repository.insert_os_events(self.events[EventType.OS])
-            if successful_transaction:
-                with tracer.start_as_current_span('insert_browser_events_into_db'):  
-                    self.repository.insert_browser_events(self.events[EventType.BROWSER])
-                for category in EventType:
-                    self.events[category].clear()
+                successful_transaction = self.repository.insert_events(self.events)
+                if successful_transaction:
+                    logger.info(f"Inserted {len(self.events[EventType.OS])} OS events and {len(self.events[EventType.BROWSER])} Browser events into the database.")
+                    for category in EventType:
+                        self.events[category].clear()
+                else:
+                    logger.error("Failed to insert events into the database.")
         
         
     def handle_browser_event(self, event: BrowserEvent):

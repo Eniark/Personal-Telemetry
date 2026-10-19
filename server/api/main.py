@@ -5,7 +5,7 @@ import server.logs.tracing
 from shared.configs import DB_PATH
 from server.db.db_connect import create_db_connection
 from server.processing_layer.event import PhoneMapper
-from server.processing_layer.main import EventProcessor, ActivityRepository, BrowserEvent, OperatingSystemEvent
+from server.processing_layer.main import EventProcessor, TelemetryRepository, BrowserEvent, OperatingSystemEvent
 from shared.configs import TIMESTAMP_FORMAT, LISTEN_TO_ALL_DEVICES
 from server.api.models import PhoneEventSchema, OSEventSchema, BrowserEventSchema
 from server.event_classifier.backend.classifier import HardCodedClassifier, MLClassifier, LLMClassifier
@@ -30,7 +30,7 @@ llm_classifier = LLMClassifier()
 
 
 db = create_db_connection(DB_PATH)
-repository = ActivityRepository(db)
+repository = TelemetryRepository(db)
 event_processor = EventProcessor(repository, [hardcoded_classifier, ml_classifier, llm_classifier])
 
 @app.post("/browser_event")
