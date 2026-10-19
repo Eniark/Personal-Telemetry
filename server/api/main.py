@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-import sqlite3
 import uvicorn
 import datetime
 from shared.configs import DB_PATH
@@ -14,20 +13,21 @@ from dotenv import load_dotenv
 from server.processing_layer.enums import EventType
 from server.logger import logger
 from uuid import uuid4
+from .middleware import register_middleware
 load_dotenv()
 
 app = FastAPI()
+register_middleware(app)
 
 
-
-hardCodedClassifier = HardCodedClassifier()
-mlClassifier = MLClassifier()
-llMClassifier = LLMClassifier()
+hardcoded_classifier = HardCodedClassifier()
+ml_classifier = MLClassifier()
+llm_classifier = LLMClassifier()
 
 
 db = create_db_connection(DB_PATH)
 repository = ActivityRepository(db)
-event_processor = EventProcessor(repository, [hardCodedClassifier, mlClassifier, llMClassifier])
+event_processor = EventProcessor(repository, [hardcoded_classifier, ml_classifier, llm_classifier])
 
 @app.post("/browser_event")
 async def browser_event_endpoint(payload: BrowserEventSchema):
