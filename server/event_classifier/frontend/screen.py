@@ -26,7 +26,7 @@ def create_repository() -> TelemetryRepository:
     return TelemetryRepository(db)
 
 
-def create_panel(repository: TelemetryRepository) -> TelemetryPanel:
+def create_panel(repository: TelemetryRepository, screen_size: int) -> TelemetryPanel:
 
     refresh_button = QPushButton('Refresh')
     refresh_button.setFixedSize(100, 25)
@@ -37,7 +37,7 @@ def create_panel(repository: TelemetryRepository) -> TelemetryPanel:
     temp_quit_btn = QPushButton('Exit')
     temp_quit_btn.setFixedSize(100, 25)
 
-    panel = TelemetryPanel()
+    panel = TelemetryPanel(screen_size=screen_size)
     layout = QVBoxLayout(panel)
     button_layout = QHBoxLayout()
     browser_events_table = BrowserEventsTable(repository=repository)
@@ -112,7 +112,8 @@ def main() -> int:
 
     repository = create_repository()
 
-    panel = create_panel(repository)
+    screen_width = QApplication.primaryScreen().availableGeometry().width()
+    panel = create_panel(repository, screen_width)
     button = create_button()
 
     position_widgets(button, panel)

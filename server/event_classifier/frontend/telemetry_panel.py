@@ -7,8 +7,10 @@ from PySide6.QtWidgets import (
 class TelemetryPanel(QWidget):
     SLIDE_DURATION = 100
     PANEL_WIDTH = 1400
-    def __init__(self):
+    __SIZE_PERCENTAGE = 0.7
+    def __init__(self, screen_size: int):
         super().__init__()
+        TelemetryPanel.PANEL_WIDTH = screen_size * TelemetryPanel.__SIZE_PERCENTAGE
 
         # Configs
         self._configure_window()
