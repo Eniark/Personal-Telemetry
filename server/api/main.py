@@ -30,7 +30,6 @@ hardcoded_classifier = HardCodedClassifier()
 ml_classifier = MLClassifier()
 llm_classifier = LLMClassifier()
 
-
 db = create_db_connection(DB_PATH)
 repository = TelemetryRepository(db)
 event_processor = EventProcessor(repository, [hardcoded_classifier, ml_classifier, llm_classifier])
@@ -48,7 +47,10 @@ async def browser_event_endpoint(payload: BrowserEventSchema):
         title = payload.title,
         category=EventType.BROWSER
     )
-    event_processor.handle_browser_event(event)
+    logger.info(f"Browser Event: {event.url} - {event.id}")
+    with tracer.start_as_current_span('handle_browser_event'):
+        event_processor.handle_browser_event(event)
+    
     return {"ok": True}
 
 @app.post("/os_event")
@@ -76,8 +78,9 @@ async def os_event_endpoint(payload: OSEventSchema):
 async def phone_event_endpoint(payload: list[PhoneEventSchema]): # the phone sends batches every 15 minutes
     for phone_event in payload:
         event = PhoneMapper.to_os_event(phone_event)
-        event_processor.handle_os_event(event)
         logger.info(f"Phone Event: {event.process} - {event.id}")
+        with tracer.start_as_current_span('handle_phone_event'):
+            event_processor.handle_os_event(event)
     return {"ok": True}
 
 @app.get("/health")
