@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 import uvicorn
 import datetime
+import server.logs.tracing
 from shared.configs import DB_PATH
 from server.db.db_connect import create_db_connection
 from server.processing_layer.event import PhoneMapper
@@ -13,11 +14,14 @@ from dotenv import load_dotenv
 from server.processing_layer.enums import EventType
 from server.logger import logger
 from uuid import uuid4
-from .middleware import register_middleware
+from opentelemetry import trace
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
 load_dotenv()
 
 app = FastAPI()
-register_middleware(app)
+FastAPIInstrumentor().instrument_app(app)
+tracer = trace.get_tracer(__name__)
 
 
 hardcoded_classifier = HardCodedClassifier()
@@ -61,8 +65,11 @@ async def os_event_endpoint(payload: OSEventSchema):
         id=str(uuid4()),
         previous_events=payload.recent_windows
     )
-    event_processor.handle_os_event(event)
-    logger.info(f"OS Event: {event.process} - {event.id}")
+    logger.info(f"OS Event Start: {event.process} - {event.id}")
+    with tracer.start_as_current_span('handle_os_event'):
+        event_processor.handle_os_event(event)
+
+    logger.info(f"OS Event End: {event.process} - {event.id}\n")
     return {"ok": True}
 
 @app.post("/phone_event")
