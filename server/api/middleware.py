@@ -8,5 +8,5 @@ def register_middleware(app):
 
         response = await call_next(request)
 
-        logger.info("Request finished: %s", request.url.path)
+        logger.info("Request finished: %s\n", request.url.path)
         return response
