@@ -7,7 +7,7 @@ telemetryEnv/
 
 # Logs / data
 logs/
-!logs/.gitkeep
+!logs/tracing.py
 telemetry.db
 # =======
 
