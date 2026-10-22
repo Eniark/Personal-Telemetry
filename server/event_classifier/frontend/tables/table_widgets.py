@@ -136,10 +136,6 @@ class OsEventsTable(TelemetryTable):
         )
 
         self.repository.update_classification(event_id=event_id, classification=classification)
-
-    def temp__clear_tables(self) -> None:
-        self.repository.temp__clear_tables()
-        self.setRowCount(0)
         
     def populate_table(self) -> None:
         events = self.repository.get_events(query=SELECT_OS_EVENTS_QUERY, limit=None)

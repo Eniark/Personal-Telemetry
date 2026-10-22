@@ -31,9 +31,6 @@ def create_panel(repository: TelemetryRepository, screen_size: int) -> Telemetry
     refresh_button = QPushButton('Refresh')
     refresh_button.setFixedSize(100, 25)
 
-    temp_clear_table_btn = QPushButton('Clear')
-    temp_clear_table_btn.setFixedSize(100, 25)
-
     temp_quit_btn = QPushButton('Exit')
     temp_quit_btn.setFixedSize(100, 25)
 
@@ -43,14 +40,12 @@ def create_panel(repository: TelemetryRepository, screen_size: int) -> Telemetry
     browser_events_table = BrowserEventsTable(repository=repository)
     os_events_table = OsEventsTable(repository=repository, browser_events_table=browser_events_table, layout=layout)
     button_layout.addWidget(refresh_button)
-    button_layout.addWidget(temp_clear_table_btn)
     button_layout.addWidget(temp_quit_btn)
     button_layout.addStretch()
 
     layout.addLayout(button_layout)
     layout.addWidget(os_events_table)
     refresh_button.clicked.connect(os_events_table.populate_table)
-    temp_clear_table_btn.clicked.connect(os_events_table.temp__clear_tables)
     temp_quit_btn.clicked.connect(QApplication.quit)
 
     return panel

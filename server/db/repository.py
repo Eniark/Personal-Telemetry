@@ -64,9 +64,4 @@ class TelemetryRepository:
         ))
         self.db.commit()
 
-    def temp__clear_tables(self): # this function will be deleted after development is done 
-        self.db.execute("DELETE FROM os_events")
-        self.db.execute("DELETE FROM browser_events")
-        self.db.commit()
-
     
