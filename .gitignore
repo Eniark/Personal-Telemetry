@@ -6,8 +6,8 @@ telemetryEnv/
 # =======
 
 # Logs / data
-logs/
-!logs/tracing.py
+server/logs/events/
+server/logs/traces/
 telemetry.db
 # =======
 
