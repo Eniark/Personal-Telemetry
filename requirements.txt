@@ -33,6 +33,7 @@ opentelemetry-semantic-conventions==0.66b1
 opentelemetry-util-http==0.66b1
 packaging==26.3
 protobuf==7.36.2
+psutil==7.2.2
 pydantic==2.14.1
 pydantic_core==2.50.1
 PySide6==6.12.0
@@ -41,6 +42,7 @@ PySide6_Essentials==6.12.0
 PySide6_Pdf==6.12.0.140
 PySide6_WebEngine==6.12.0.140
 python-dotenv==1.2.4
+pywin32==312
 requests==2.34.2
 shiboken6==6.12.0
 starlette==1.9.0
