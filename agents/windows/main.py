@@ -13,10 +13,18 @@ from collections import deque
 import threading
 from shared.utils import get_env_variables
 from server.processing_layer.enums import EventType
-import win32gui
+import pybreaker
 
 load_dotenv()
 
+
+
+PYBREAKER_NUM_RETRIES = 3
+PYBREAKER_STREAM_LOCK_SECONDS = 5
+api_breaker = pybreaker.CircuitBreaker(
+    fail_max=PYBREAKER_NUM_RETRIES,
+    reset_timeout=PYBREAKER_STREAM_LOCK_SECONDS
+)
 
 def get_process_info(window_id):
     _, pid = win32process.GetWindowThreadProcessId(window_id)
@@ -57,8 +65,11 @@ def get_publisher_name(exe_path):
         return None
 
 
-
-
+@api_breaker
+def send_data(data):
+    response = requests.post(f"http://{HOST}:{PORT}/os_event", json=data, timeout=PYBREAKER_STREAM_LOCK_SECONDS-3)
+    response.raise_for_status()
+    
 
 def sender():
     while True:
@@ -70,7 +81,11 @@ def sender():
                 data["publisher"],
                 data["category"],
             )
-            requests.post(f"http://{HOST}:{PORT}/os_event", json=data)
+            send_data(data)
+        except pybreaker.CircuitBreakerError:
+            print(f"API temporarily unavailable. Locking for {PYBREAKER_STREAM_LOCK_SECONDS} seconds.")
+        except requests.RequestException as e:
+            print(f"Failed to send event: {e}")
         finally:
             event_queue.task_done()
 
@@ -104,7 +119,6 @@ def callback(hook, event, hwnd, idObject, idChild, thread, time):
                 recent_windows.appendleft(recent_object)
                 event_queue.put(current_object)
 
-                threading.Thread(target=sender, daemon=True).start() # so no blocking of main thread happens
             current_object = next_object
 
 
@@ -124,7 +138,9 @@ if __name__=='__main__':
         ctypes.c_uint, ctypes.c_uint
     )
 
+    threading.Thread(target=sender, daemon=True).start() # thread for sender process
     hook_cb = WinEventProc(callback)
+
 
     user32.SetWinEventHook(
         win32con.EVENT_SYSTEM_FOREGROUND, # Starting range of event types to track

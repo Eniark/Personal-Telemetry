@@ -47,7 +47,7 @@ async def browser_event_endpoint(payload: BrowserEventSchema):
         title = payload.title,
         category=EventType.BROWSER
     )
-    logger.info(f"Browser Event: {event.url} - {event.id}")
+    logger.info(f"Browser Event: {event.title} - {event.url}")
     with tracer.start_as_current_span('handle_browser_event'):
         event_processor.handle_browser_event(event)
     
