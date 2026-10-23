@@ -6,28 +6,25 @@ telemetryEnv/
 # =======
 
 # Logs / data
-server/logs/events/
-server/logs/traces/
+telemetry-app/server/logs/events/
+telemetry-app/server/logs/traces/
 telemetry.db
 # =======
 
 
 # Android App builds
-agents/android/app/build/
-agents/android/build/
-agents/android/.gradle/
-agents/android/local.properties
-agents/android/app/src/androidTest/
-agents/android/app/src/test/
+telemetry-app/agents/android/app/build/
+telemetry-app/agents/android/build/
+telemetry-app/agents/android/.gradle/
+telemetry-app/agents/android/local.properties
+telemetry-app/agents/android/app/src/androidTest/
+telemetry-app/agents/android/app/src/test/
+telemetry-app/agents/android/externalNativeBuild/
+telemetry-app/agents/android/cxx/
 # =======
 
 # IDE files
 .idea/
 .vscode/
 *.iml
-# =======
-
-# Native builds
-agents/android/externalNativeBuild/
-agents/android/cxx/
 # =======

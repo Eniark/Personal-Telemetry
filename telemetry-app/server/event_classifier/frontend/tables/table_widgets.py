@@ -13,7 +13,7 @@ from server.processing_layer.enums import EventCategory
 from server.event_classifier.backend.classifier import Classification
 from server.processing_layer.sql_queries import SELECT_OS_EVENTS_QUERY, SELECT_BROWSER_EVENTS_QUERY
 from server.db.repository import TelemetryRepository
-from server.processing_layer.enums import EventType
+from shared.enums import EventType
 from .column import Column
 
 class TelemetryTable(QTableWidget):

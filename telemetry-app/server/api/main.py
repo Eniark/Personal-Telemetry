@@ -11,7 +11,7 @@ from server.api.models import PhoneEventSchema, OSEventSchema, BrowserEventSchem
 from server.event_classifier.backend.classifier import HardCodedClassifier, MLClassifier, LLMClassifier
 from shared.utils import convert_date_to_readable_format, get_env_variables
 from dotenv import load_dotenv
-from server.processing_layer.enums import EventType
+from shared.enums import EventType
 from server.logger import logger
 from uuid import uuid4
 from opentelemetry import trace

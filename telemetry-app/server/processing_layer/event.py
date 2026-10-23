@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 import datetime
 
 from server.api.models import PhoneEventSchema
-from server.processing_layer.enums import EventType
+from shared.enums import EventType
 from shared.configs import TIMESTAMP_FORMAT
 from shared.utils import convert_date_to_readable_format
 from uuid import uuid4

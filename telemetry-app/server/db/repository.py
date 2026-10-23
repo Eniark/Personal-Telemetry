@@ -1,7 +1,7 @@
 from sqlite3 import Connection
 
-from server.processing_layer.enums import EventType
-from server.processing_layer.event import BrowserEvent, OperatingSystemEvent
+from shared.enums import EventType
+from server.processing_layer.event import OperatingSystemEvent
 from server.processing_layer.sql_queries import INSERT_OS_EVENTS_QUERY, INSERT_BROWSER_EVENTS_QUERY, UPDATE_EVENT_CLASS_QUERY
 from server.event_classifier.backend.classifier import Classification
 import json, sqlite3
