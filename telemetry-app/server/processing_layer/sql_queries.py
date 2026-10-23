@@ -32,7 +32,7 @@ SELECT_BROWSER_EVENTS_QUERY = """
 """
 
 UPDATE_EVENT_CLASS_QUERY = """
-    UPDATE os_events
+    UPDATE {table}
     SET class=?,
         classified_at=?,
         classified_by=?

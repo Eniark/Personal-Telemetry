@@ -17,7 +17,9 @@ from shared.enums import EventType
 from .column import Column
 
 class TelemetryTable(QTableWidget):
+    TABLE_NAME = None
     TABLE_HEIGHT = 300
+
     def __init__(self, repository: TelemetryRepository):
         super().__init__()
         self.repository = repository
@@ -58,40 +60,69 @@ class TelemetryTable(QTableWidget):
                 if item and column_config and column_config.text_alignment == "center":
                     item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
     
+    def _populate_table(self, data):
+        data = data[:self.max_rows]
+        self._preconfigure_table(n_rows=len(data))
+        for row_idx, row in enumerate(data):
+            action_button = QPushButton("Apply")
+            event_category_dropdown = QComboBox()
+            event_category_dropdown.addItems([category.value for category in EventCategory])
+            for col_idx, value in enumerate(row):
+                value = str(value)
+                self.setItem(row_idx, col_idx, QTableWidgetItem(value))
+            self.setCellWidget(row_idx, self.get_column_idx('class'), event_category_dropdown)
+            self.setCellWidget(row_idx, self.get_column_idx('action'), action_button)
+            row_id = row[0]
+            action_button.clicked.connect(lambda _, row_id=row_id, dropdown=event_category_dropdown: self.update_classification(row_id=row_id, dropdown=dropdown))
+            action_button.clicked.connect(self._delete_record)
+
+        self._postconfigure_table()
+
     def get_column_idx(self, name: str) -> int:
         return list(self.COLUMN_CONFIGS).index(name)
     
     def get_column(self, idx: str) -> Column:
         column_key = list(self.COLUMN_CONFIGS)[idx]
         return self.COLUMN_CONFIGS.get(column_key)
+    
+    def update_classification(self, row_id: str, dropdown: QComboBox) -> None:
+        classification = Classification(
+            class_=dropdown.currentText(),
+            classified_at=datetime.datetime.now(),
+            classified_by='user'
+        )
 
+        self.repository.update_classification(row_id=row_id, classification=classification, table=self.TABLE_NAME)
+    
+    def _delete_record(self) -> None:
+        button = self.sender()
+
+        for row in range(self.rowCount()):
+            if self.cellWidget(row, self.get_column_idx('action')) is button:
+                self.removeRow(row)
+                break
 
 class BrowserEventsTable(TelemetryTable):
+    TABLE_NAME = 'browser_events'
     COLUMN_CONFIGS = {
         "id": Column(title="id", width=75),
         "url": Column(title="url", width=450),
         "title": Column(title="title", width=300),
         "event_start_time": Column(title="Event Start Time", text_alignment="center"),
         "event_end_time": Column(title="Event End Time", text_alignment="center"),
+        "class": Column(title="Proposed Class", width=100, text_alignment="center"),
+        "action": Column(title="Action", width=75, text_alignment="center"),
     }
     def __init__(self, repository: TelemetryRepository):
         super().__init__(repository)
         self.populate_table()
 
     def populate_table(self, os_event_id: str|None = None) -> None:
-
         events = self.repository.get_events(query=SELECT_BROWSER_EVENTS_QUERY, params=(os_event_id,), limit=None)
-        events = events[:self.max_rows]
-
-        self._preconfigure_table(n_rows=len(events))
-        for row_idx, row in enumerate(events):
-
-            for col_idx, value in enumerate(row):
-                value = str(value)
-                self.setItem(row_idx, col_idx, QTableWidgetItem(value))
-        self._postconfigure_table()
+        self._populate_table(events)
 
 class OsEventsTable(TelemetryTable):
+    TABLE_NAME = 'os_events'
     COLUMN_CONFIGS = {
         "id": Column(title="id", width=75),
         "event_id": Column(title="Event Id", hidden=True),
@@ -109,13 +140,7 @@ class OsEventsTable(TelemetryTable):
         self.layout = layout
         self.populate_table()
     
-    def delete_record(self) -> None:
-        button = self.sender()
 
-        for row in range(self.rowCount()):
-            if self.cellWidget(row, self.get_column_idx('action')) is button:
-                self.removeRow(row)
-                break
     
     def show_events_table(self, item: QTableWidgetItem) -> None:
         row = item.row()
@@ -124,40 +149,14 @@ class OsEventsTable(TelemetryTable):
         if event_type == EventType.BROWSER.value:
             self.browser_events_table.populate_table(os_event_id=event_id)
             self.layout.addWidget(self.browser_events_table)
-    
         else:
             self.browser_events_table.setParent(None)
             self.parentWidget().adjustSize()
-    def update_classification(self, event_id: str, dropdown: QComboBox) -> None:
-        classification = Classification(
-            class_=dropdown.currentText(),
-            classified_at=datetime.datetime.now(),
-            classified_by='user'
-        )
-
-        self.repository.update_classification(event_id=event_id, classification=classification)
         
     def populate_table(self) -> None:
         events = self.repository.get_events(query=SELECT_OS_EVENTS_QUERY, limit=None)
-        events = events[:self.max_rows]
-  
-        self._preconfigure_table(n_rows=len(events))
-        for row_idx, row in enumerate(events):
-            action_button = QPushButton("Apply")
-            event_category_dropdown = QComboBox()
-            event_category_dropdown.addItems([category.value for category in EventCategory])
-            for col_idx, value in enumerate(row):
-                value = str(value)
-                self.setItem(row_idx, col_idx, QTableWidgetItem(value))
-            self.setCellWidget(row_idx, self.get_column_idx('class'), event_category_dropdown)
-            self.setCellWidget(row_idx, self.get_column_idx('action'), action_button)
-            event_id = row[0]
-            action_button.clicked.connect(lambda _, event_id=event_id, dropdown=event_category_dropdown: self.update_classification(event_id=event_id, dropdown=dropdown))
-            action_button.clicked.connect(self.delete_record)
-
-
+        self._populate_table(events)
         self.itemClicked.connect(self.show_events_table)
-        self._postconfigure_table()
 
         
 

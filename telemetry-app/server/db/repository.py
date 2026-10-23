@@ -48,19 +48,19 @@ class TelemetryRepository:
         except sqlite3.Error as e:
             print(e)
 
-    def get_events(self, query: str, params: tuple=(), limit: int|None = None) -> tuple[list|None, list[Any]]:
+    def get_events(self, query: str, params: tuple = (), limit: int|None = None) -> tuple[list|None, list[Any]]:
         cursor = self.db.execute(query, params)
         data = cursor.fetchall()
         return data
     
 
-    def update_classification(self, event_id: int, classification: Classification):
-        self.db.execute(UPDATE_EVENT_CLASS_QUERY,
+    def update_classification(self, row_id: int, classification: Classification, table: str):
+        self.db.execute(UPDATE_EVENT_CLASS_QUERY.format(table=table),
         (
             classification.class_,
             classification.classified_at,
             classification.classified_by,
-            event_id
+            row_id
         ))
         self.db.commit()
 
