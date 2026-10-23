@@ -1,7 +1,7 @@
 from server.db.repository import TelemetryRepository
 from server.processing_layer.event import BrowserEvent, OperatingSystemEvent, Event
 from server.event_classifier.backend.classifier import Classifier
-from .enums import EventType
+from shared.enums import EventType
 from server.logger import logger
 from opentelemetry import trace
 from .event_filter import EventFilter

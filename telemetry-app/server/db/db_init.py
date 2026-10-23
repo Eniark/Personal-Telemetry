@@ -38,6 +38,7 @@ with create_db_connection(DB_PATH) as conn:
             event_end_time TEXT,
             processing_time TEXT,
             os_event_id TEXT,
+            class TEXT,
             FOREIGN KEY (os_event_id) REFERENCES os_event(event_id) 
         )
         """)

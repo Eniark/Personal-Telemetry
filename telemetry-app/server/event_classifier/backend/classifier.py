@@ -1,5 +1,5 @@
 from ollama import chat
-from shared.enums import EventCategory
+from server.processing_layer.enums import EventCategory
 from abc import ABC, abstractmethod
 from server.processing_layer.event import OperatingSystemEvent
 from dataclasses import dataclass
