@@ -13,6 +13,9 @@ EVENTS_FOLDER = LOGS_FOLDER / "events"
 TRACES_FOLDER = LOGS_FOLDER / "traces" 
 LOGS_FILE_NAME = datetime.now().strftime(LOGS_FILENAME_FORMAT)
 
+# UI Settings
+MEDIA_FOLDER = PROJECT_ROOT / 'server' / 'event_classifier' / 'frontend' / 'media'
+
 # Database configs
 DB_NAME = "telemetry.db"
 DB_PATH = PROJECT_ROOT / "server" / "db" / DB_NAME

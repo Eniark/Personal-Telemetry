@@ -54,7 +54,7 @@ class EventProcessor:
             logger.warning(f"Filtered out OS Event: {event.process} - {event.id}")
             return
         
-        self.add_class(event=event)
+        # self.add_class(event=event)
         self.events[EventType.OS].append(event)
         logger.info(f"Added OS Event to tracker: {event.process} - {event.id}")
         self._flush_if_needed()
