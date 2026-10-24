@@ -87,9 +87,9 @@ class TelemetryTable(QTableWidget):
     
     def update_classification(self, row_id: str, dropdown: QComboBox) -> None:
         classification = Classification(
-            class_=dropdown.currentText(),
-            classified_at=datetime.datetime.now(),
-            classified_by='user'
+            class_ = EventCategory(dropdown.currentText()),
+            classified_at = datetime.datetime.now(),
+            classified_by = 'user'
         )
 
         self.repository.update_classification(row_id=row_id, classification=classification, table=self.TABLE_NAME)

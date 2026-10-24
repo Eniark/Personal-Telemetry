@@ -23,7 +23,8 @@ with create_db_connection(DB_PATH) as conn:
             previous_events TEXT,
             class TEXT,
             classified_at TEXT,
-            classified_by TEXT
+            classified_by TEXT,
+            classification_approved BOOL
         )
         """)
 
@@ -39,6 +40,9 @@ with create_db_connection(DB_PATH) as conn:
             processing_time TEXT,
             os_event_id TEXT,
             class TEXT,
+            classified_at TEXT,
+            classified_by TEXT,
+            classification_approved BOOL
             FOREIGN KEY (os_event_id) REFERENCES os_event(event_id) 
         )
         """)
