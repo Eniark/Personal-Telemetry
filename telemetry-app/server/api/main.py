@@ -32,7 +32,11 @@ llm_classifier = LLMClassifier()
 
 db = create_db_connection(DB_PATH)
 repository = TelemetryRepository(db)
-event_processor = EventProcessor(repository, [hardcoded_classifier, ml_classifier, llm_classifier])
+event_processor = EventProcessor(repository, [
+    # hardcoded_classifier, 
+    ml_classifier, 
+    llm_classifier
+])
 
 @app.post("/browser_event")
 async def browser_event_endpoint(payload: BrowserEventSchema):

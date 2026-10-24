@@ -2,9 +2,11 @@ from dataclasses import dataclass, field
 import datetime
 
 from server.api.models import PhoneEventSchema
+from .enums import EventCategory
 from shared.enums import EventType
 from shared.configs import TIMESTAMP_FORMAT
 from shared.utils import convert_date_to_readable_format
+from server.event_classifier.backend.classifier import Classification
 from uuid import uuid4
 
 
@@ -12,9 +14,10 @@ from uuid import uuid4
 class Event:
     event_start_time: int
     event_end_time: int
+    category: EventType
     title: str | None = field(default=None, kw_only=True)
     processing_time: str | None = field(default=None, kw_only=True)
-    category: EventType
+    class_: Classification | None = field(default=None, kw_only=True)
 
 @dataclass(slots=True)
 class BrowserEvent(Event):

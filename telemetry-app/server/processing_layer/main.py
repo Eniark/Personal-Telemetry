@@ -1,10 +1,17 @@
+import datetime
+
 from server.db.repository import TelemetryRepository
 from server.processing_layer.event import BrowserEvent, OperatingSystemEvent, Event
-from server.event_classifier.backend.classifier import Classifier
+from server.event_classifier.backend.classifier import Classifier, Classification
+from server.event_classifier.backend.enums import ClassificationRole
+
 from shared.enums import EventType
+from shared.configs import TIMESTAMP_FORMAT
 from server.logger import logger
 from opentelemetry import trace
 from .event_filter import EventFilter
+
+
 tracer = trace.get_tracer(__name__)
 
 
@@ -46,7 +53,8 @@ class EventProcessor:
         if not self.event_filter.is_valid_event(event):
             logger.warning(f"Filtered out OS Event: {event.process} - {event.id}")
             return
-
+        
+        self.add_class(event=event)
         self.events[EventType.OS].append(event)
         logger.info(f"Added OS Event to tracker: {event.process} - {event.id}")
         self._flush_if_needed()
@@ -58,3 +66,22 @@ class EventProcessor:
                 logger.info(f"Browser Event: {browser_event.url} - {browser_event.os_event_id}")
             self.events[EventType.BROWSER].extend(self._browser_events_window)
             self._browser_events_window.clear()
+    
+    def add_class(self, event: Event) -> Event:
+        for classifier in self.classifiers:
+            confidence, class_ = classifier.classify(event)
+            if class_:
+                break
+        event.class_ = Classification(
+            class_=class_,
+            classified_by=ClassificationRole.AI,
+            classified_at=datetime.datetime.now().strftime(TIMESTAMP_FORMAT),
+            confidence=confidence
+        )
+        if confidence > 0.9:
+            event.class_.classification_approved = True
+        else:
+            event.class_.classification_approved = False
+            print(class_, confidence)
+        print('Added class')
+        
