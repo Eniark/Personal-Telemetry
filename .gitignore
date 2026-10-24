@@ -28,3 +28,7 @@ telemetry-app/agents/android/cxx/
 .vscode/
 *.iml
 # =======
+
+# Other
+telemetry-app/server/event_classifier/backend/catboost_info/
+# =======
