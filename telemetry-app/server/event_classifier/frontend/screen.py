@@ -5,15 +5,12 @@ from PySide6.QtWidgets import (
     QApplication,
     QHBoxLayout,
     QPushButton,
-    QTabWidget,
     QVBoxLayout,
 )
-from PySide6.QtCore import Qt
 
 from server.db.db_connect import create_db_connection
 from server.db.repository import TelemetryRepository
-from server.event_classifier.configs import MEDIA_FOLDER
-from shared.configs import DB_PATH
+from shared.configs import DB_PATH, MEDIA_FOLDER
 
 from .draggable_button import DraggableButton
 from .enums import SlidingStrategy
