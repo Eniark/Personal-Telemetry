@@ -4,6 +4,7 @@ from shared.enums import EventType
 from server.processing_layer.event import OperatingSystemEvent
 from server.processing_layer.sql_queries import INSERT_OS_EVENTS_QUERY, INSERT_BROWSER_EVENTS_QUERY, UPDATE_EVENT_CLASS_QUERY
 from server.event_classifier.backend.classifier import Classification
+from server.logs.logger import logger
 import json, sqlite3
 from typing import Any
 
@@ -44,8 +45,10 @@ class TelemetryRepository:
 
         try:
             self.db.commit()
+            logger.info(f"[DB] Inserted {len(events[EventType.OS])} OS events and {len(events[EventType.BROWSER])} Browser events into the database.")
             return True
         except sqlite3.Error as e:
+            logger.error(F"[DB] Failed to insert {len(events[EventType.OS])} OS events and {len(events[EventType.BROWSER])} Browser events into the database.")
             print(e)
 
     def get_events(self, query: str, params: tuple = (), limit: int|None = None) -> tuple[list|None, list[Any]]:

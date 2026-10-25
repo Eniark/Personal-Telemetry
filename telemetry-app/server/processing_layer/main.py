@@ -7,7 +7,7 @@ from server.event_classifier.backend.enums import ClassificationRole
 
 from shared.enums import EventType
 from shared.configs import TIMESTAMP_FORMAT
-from server.logger import logger
+from server.logs.logger import logger
 from opentelemetry import trace
 from .event_filter import EventFilter
 
@@ -31,32 +31,29 @@ class EventProcessor:
             with tracer.start_as_current_span('insert_os_events_into_db'):
                 successful_transaction = self.repository.insert_events(self.events)
                 if successful_transaction:
-                    logger.info(f"Inserted {len(self.events[EventType.OS])} OS events and {len(self.events[EventType.BROWSER])} Browser events into the database.")
                     for category in EventType:
                         self.events[category].clear()
-                else:
-                    logger.error("Failed to insert events into the database.")
         
         
     def handle_browser_event(self, event: BrowserEvent):
         if not self.event_filter.is_valid_event(event):
-            logger.warning(f"Filtered out Browser Event: {event.url} - {event.id}")
+            logger.warning(f"[Event Processor] Filtered out Browser Event: {event.url} - {event.id}")
             return
 
         self._browser_events_window.append(event) # the events are inserted in _handle_late_os_event due to late browser events
-        logger.info(f"Added Browser Event to tracker: {event.url} - {event.id}")
+        logger.info(f"[Event Processor] Added Browser Event to tracker: {event.url} - {event.id}")
 
 
     def handle_os_event(self, event: OperatingSystemEvent):
         self._handle_late_os_event(event)
 
         if not self.event_filter.is_valid_event(event):
-            logger.warning(f"Filtered out OS Event: {event.process} - {event.id}")
+            logger.warning(f"[Event Processor] Filtered out OS Event: {event.process} - {event.id}")
             return
         
         # self.add_class(event=event)
         self.events[EventType.OS].append(event)
-        logger.info(f"Added OS Event to tracker: {event.process} - {event.id}")
+        logger.info(f"[Event Processor] Added OS Event to tracker: {event.process} - {event.id}")
         self._flush_if_needed()
     
     def _handle_late_os_event(self, event: OperatingSystemEvent) -> None:

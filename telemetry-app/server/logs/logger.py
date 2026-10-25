@@ -1,9 +1,6 @@
 import logging
 from shared.configs import EVENTS_FOLDER, LOGS_FILE_NAME
-from contextvars import ContextVar
-import datetime
 
-trace_id_var = ContextVar("trace_id", default=None)
 
 from opentelemetry import trace
 import logging

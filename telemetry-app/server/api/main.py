@@ -12,7 +12,7 @@ from server.event_classifier.backend.classifier import HardCodedClassifier, MLCl
 from shared.utils import convert_date_to_readable_format, get_env_variables
 from dotenv import load_dotenv
 from shared.enums import EventType
-from server.logger import logger
+from server.logs.logger import logger
 from uuid import uuid4
 from opentelemetry import trace
 from .middleware import register_middleware
@@ -51,7 +51,7 @@ async def browser_event_endpoint(payload: BrowserEventSchema):
         title = payload.title,
         category=EventType.BROWSER
     )
-    logger.info(f"Browser Event: {event.title} - {event.url}")
+    logger.info(f"[API] Browser Event: {event.title} - {event.url}")
     with tracer.start_as_current_span('handle_browser_event'):
         event_processor.handle_browser_event(event)
     
@@ -73,7 +73,7 @@ async def os_event_endpoint(payload: OSEventSchema):
         id=str(uuid4()),
         previous_events=payload.recent_windows
     )
-    logger.info(f"OS Event: {event.process} - {event.id}")
+    logger.info(f"[API] OS Event: {event.process} - {event.id}")
     with tracer.start_as_current_span('handle_os_event'):
         event_processor.handle_os_event(event)
     return {"ok": True}
@@ -82,7 +82,7 @@ async def os_event_endpoint(payload: OSEventSchema):
 async def phone_event_endpoint(payload: list[PhoneEventSchema]): # the phone sends batches every 15 minutes
     for phone_event in payload:
         event = PhoneMapper.to_os_event(phone_event)
-        logger.info(f"Phone Event: {event.process} - {event.id}")
+        logger.info(f"[API] Phone Event: {event.process} - {event.id}")
         with tracer.start_as_current_span('handle_phone_event'):
             event_processor.handle_os_event(event)
     return {"ok": True}
