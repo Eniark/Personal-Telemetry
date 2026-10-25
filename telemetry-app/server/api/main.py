@@ -9,6 +9,9 @@ from server.processing_layer.main import EventProcessor, TelemetryRepository, Br
 from shared.configs import TIMESTAMP_FORMAT, LISTEN_TO_ALL_DEVICES
 from server.api.models import PhoneEventSchema, OSEventSchema, BrowserEventSchema
 from server.event_classifier.backend.classifier import HardCodedClassifier, MLClassifier, LLMClassifier
+from server.event_classifier.backend.pipeline import ClassifierPipeline
+from server.event_classifier.backend.event_feature_extractor import EventFeatureExtractor
+
 from shared.utils import convert_date_to_readable_format, get_env_variables
 from dotenv import load_dotenv
 from shared.enums import EventType
@@ -26,16 +29,16 @@ FastAPIInstrumentor().instrument_app(app)
 tracer = trace.get_tracer(__name__)
 
 
-hardcoded_classifier = HardCodedClassifier()
-ml_classifier = MLClassifier()
-llm_classifier = LLMClassifier()
+hardcoded_classifier = ClassifierPipeline(preprocessor=EventFeatureExtractor(), classifier=HardCodedClassifier())
+ml_classifier = ClassifierPipeline(preprocessor=EventFeatureExtractor(), classifier=MLClassifier())
+llm_classifier = ClassifierPipeline(preprocessor=EventFeatureExtractor(), classifier= LLMClassifier())
 
 db = create_db_connection(DB_PATH)
 repository = TelemetryRepository(db)
 event_processor = EventProcessor(repository, [
     # hardcoded_classifier, 
     ml_classifier, 
-    llm_classifier
+    # llm_classifier
 ])
 
 @app.post("/browser_event")
@@ -44,12 +47,12 @@ async def browser_event_endpoint(payload: BrowserEventSchema):
     event_start_time = convert_date_to_readable_format(payload.eventStartTime / 1000)
     event_end_time = convert_date_to_readable_format(payload.eventStartTime / 1000)
     event = BrowserEvent(
-        event_start_time=event_start_time,
-        event_end_time=event_end_time,
-        processing_time=processing_time,
+        event_start_time = event_start_time,
+        event_end_time = event_end_time,
+        processing_time = processing_time,
         url = payload.url,
         title = payload.title,
-        category=EventType.BROWSER
+        category = EventType.BROWSER
     )
     logger.info(f"[API] Browser Event: {event.title} - {event.url}")
     with tracer.start_as_current_span('handle_browser_event'):
@@ -60,18 +63,17 @@ async def browser_event_endpoint(payload: BrowserEventSchema):
 @app.post("/os_event")
 async def os_event_endpoint(payload: OSEventSchema):
     processing_time = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
-    category = EventType.OS if payload.category == EventType.OS.value else EventType.BROWSER
     event = OperatingSystemEvent(
-        process=payload.executable,
+        process = payload.executable,
         title = payload.title,
-        description=None,
-        event_start_time=payload.event_start_time,
-        event_end_time=payload.event_end_time,
-        processing_time=processing_time,
-        category=category,
-        publisher=payload.publisher,
-        id=str(uuid4()),
-        previous_events=payload.recent_windows
+        description = None,
+        event_start_time = payload.event_start_time,
+        event_end_time = payload.event_end_time,
+        processing_time = processing_time,
+        category = EventType(payload.category),
+        publisher = payload.publisher,
+        id = str(uuid4()),
+        previous_events = payload.recent_windows
     )
     logger.info(f"[API] OS Event: {event.process} - {event.id}")
     with tracer.start_as_current_span('handle_os_event'):
