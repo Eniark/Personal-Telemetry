@@ -81,7 +81,7 @@ class EventFeatureExtractor:
                 week_day = week_day,
                 publisher = event.publisher,
                 hour = hour,
-                duration_seconds = event.duration_seconds
+                duration_seconds = duration_seconds
             )
 
     @staticmethod

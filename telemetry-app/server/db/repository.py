@@ -26,7 +26,12 @@ class TelemetryRepository:
                 activity.event_end_time,
                 activity.processing_time,
                 activity.category.value,
-                json.dumps(activity.previous_events)
+                json.dumps(activity.previous_events),
+                activity.class_.class_,
+                activity.class_.classified_at,
+                activity.class_.classified_by.value,
+                activity.class_.classification_approved,
+                activity.class_.confidence,
             )
             for activity in events[EventType.OS]
         ))
@@ -38,7 +43,12 @@ class TelemetryRepository:
                 activity.event_start_time,
                 activity.event_end_time,
                 activity.processing_time,
-                activity.os_event_id
+                activity.os_event_id,
+                activity.class_.class_,
+                activity.class_.classified_at,
+                activity.class_.classified_by.value,
+                activity.class_.classification_approved,
+                activity.class_.confidence,
             )
             for activity in events[EventType.BROWSER]
         ))

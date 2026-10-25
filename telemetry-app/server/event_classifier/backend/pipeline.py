@@ -13,5 +13,4 @@ class ClassifierPipeline:
 
     def enrich_and_predict(self, event: "Event") -> "Event":
         enriched_features = self.preprocessor.get_enriched_features(event)
-        print(enriched_features)
-        # classify the event here
+        return self.classifier.classify(enriched_features)

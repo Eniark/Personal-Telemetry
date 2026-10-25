@@ -42,6 +42,7 @@ class EventProcessor:
             logger.warning(f"[Event Processor] Filtered out Browser Event: {event.title} - {event.url}")
             return
 
+        self.add_class(event=event)
         self._browser_events_window.append(event) # the events are inserted in _handle_late_os_event due to late browser events
         logger.info(f"[Event Processor] Added Browser Event to tracker: {event.title} - {event.url}")
 
@@ -64,27 +65,23 @@ class EventProcessor:
                 browser_event.os_event_id = event.id # attaching the OS event ID to the browser events that arrived before the OS event
                 browser_event.publisher = event.publisher
                 browser_event.process = event.process
-                logger.info(f"Browser Event: {browser_event.url} - {browser_event.os_event_id}")
+                logger.info(f"[Event Processor] Browser Event: {browser_event.url} - {browser_event.os_event_id}")
             self.events[EventType.BROWSER].extend(self._browser_events_window)
             self._browser_events_window.clear()
     
     def add_class(self, event: Event) -> Event:
         
         for classifier in self.classifiers:
-            classifier.enrich_and_predict(event=event)
-        #     confidence, class_ = classifier.classify(event)
-        #     if class_:
-        #         break
-        # event.class_ = Classification(
-        #     class_=class_,
-        #     classified_by=ClassificationRole.AI,
-        #     classified_at=datetime.datetime.now().strftime(TIMESTAMP_FORMAT),
-        #     confidence=confidence
-        # )
-        # if confidence > 0.9:
-        #     event.class_.classification_approved = True
-        # else:
-        #     event.class_.classification_approved = False
-        #     print(class_, confidence)
-        # print('Added class')
+            confidence, class_ = classifier.enrich_and_predict(event=event)
+            if class_:
+                break
+        class_ = Classification( # move this upstream to correctly assign the classified_by field 
+            class_=class_,
+            classified_by=ClassificationRole.AI,
+            classified_at=datetime.datetime.now().strftime(TIMESTAMP_FORMAT),
+            confidence=confidence
+        )
+        class_.classification_approved = confidence > 0.9
+
+        event.class_ = class_
         

@@ -1,7 +1,19 @@
 INSERT_BROWSER_EVENTS_QUERY = """
     INSERT INTO browser_events
-    (url, title, event_start_time, event_end_time, processing_time, os_event_id)
-    VALUES (?, ?, ?, ?, ?, ?);
+    (
+        url,
+        title,
+        event_start_time,
+        event_end_time,
+        processing_time,
+        os_event_id,
+        class,
+        classified_at,
+        classified_by,
+        classification_approved,
+        model_confidence
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 """
 
 INSERT_OS_EVENTS_QUERY = """
@@ -16,9 +28,14 @@ INSERT_OS_EVENTS_QUERY = """
         event_end_time,
         processing_time,
         type,
-        previous_events
+        previous_events,
+        class,
+        classified_at,
+        classified_by,
+        classification_approved,
+        model_confidence
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 """
 
 SELECT_OS_EVENTS_QUERY = """
