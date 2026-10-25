@@ -14,9 +14,12 @@ class Event:
     event_start_time: int
     event_end_time: int
     category: EventType
+    process: str | None = field(default=None, kw_only=True)
+    publisher: str | None = field(default=None, kw_only=True)
     title: str | None = field(default=None, kw_only=True)
     processing_time: str | None = field(default=None, kw_only=True)
     class_: Classification | None = field(default=None, kw_only=True)
+
 
 @dataclass(slots=True)
 class BrowserEvent(Event):
@@ -29,8 +32,6 @@ class BrowserEvent(Event):
 
 @dataclass(slots=True)
 class OperatingSystemEvent(Event):
-    process: str
-    publisher: str
     id: str
     description: str | None = None
     previous_events: list = field(default_factory=list, kw_only=True)

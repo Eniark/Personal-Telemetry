@@ -4,6 +4,8 @@ from server.db.repository import TelemetryRepository
 from server.processing_layer.event import BrowserEvent, OperatingSystemEvent, Event
 from server.event_classifier.backend.classifier import Classifier, Classification
 from server.event_classifier.backend.enums import ClassificationRole
+from server.event_classifier.backend.pipeline import ClassifierPipeline
+
 
 from shared.enums import EventType
 from shared.configs import TIMESTAMP_FORMAT
@@ -16,7 +18,7 @@ tracer = trace.get_tracer(__name__)
 
 
 class EventProcessor:
-    def __init__(self, repository: TelemetryRepository, classifiers: list[Classifier]) -> None:
+    def __init__(self, repository: TelemetryRepository, classifiers: list[ClassifierPipeline]) -> None:
         self.repository = repository
         self.event_filter = EventFilter()
         self.events: list[Event] = {
@@ -37,11 +39,11 @@ class EventProcessor:
         
     def handle_browser_event(self, event: BrowserEvent):
         if not self.event_filter.is_valid_event(event):
-            logger.warning(f"[Event Processor] Filtered out Browser Event: {event.url} - {event.id}")
+            logger.warning(f"[Event Processor] Filtered out Browser Event: {event.title} - {event.url}")
             return
 
         self._browser_events_window.append(event) # the events are inserted in _handle_late_os_event due to late browser events
-        logger.info(f"[Event Processor] Added Browser Event to tracker: {event.url} - {event.id}")
+        logger.info(f"[Event Processor] Added Browser Event to tracker: {event.title} - {event.url}")
 
 
     def handle_os_event(self, event: OperatingSystemEvent):
@@ -51,7 +53,7 @@ class EventProcessor:
             logger.warning(f"[Event Processor] Filtered out OS Event: {event.process} - {event.id}")
             return
         
-        # self.add_class(event=event)
+        self.add_class(event=event)
         self.events[EventType.OS].append(event)
         logger.info(f"[Event Processor] Added OS Event to tracker: {event.process} - {event.id}")
         self._flush_if_needed()
@@ -60,25 +62,29 @@ class EventProcessor:
         if event.category == EventType.BROWSER and len(self._browser_events_window) != 0:
             for browser_event in self._browser_events_window:
                 browser_event.os_event_id = event.id # attaching the OS event ID to the browser events that arrived before the OS event
+                browser_event.publisher = event.publisher
+                browser_event.process = event.process
                 logger.info(f"Browser Event: {browser_event.url} - {browser_event.os_event_id}")
             self.events[EventType.BROWSER].extend(self._browser_events_window)
             self._browser_events_window.clear()
     
     def add_class(self, event: Event) -> Event:
+        
         for classifier in self.classifiers:
-            confidence, class_ = classifier.classify(event)
-            if class_:
-                break
-        event.class_ = Classification(
-            class_=class_,
-            classified_by=ClassificationRole.AI,
-            classified_at=datetime.datetime.now().strftime(TIMESTAMP_FORMAT),
-            confidence=confidence
-        )
-        if confidence > 0.9:
-            event.class_.classification_approved = True
-        else:
-            event.class_.classification_approved = False
-            print(class_, confidence)
-        print('Added class')
+            classifier.enrich_and_predict(event=event)
+        #     confidence, class_ = classifier.classify(event)
+        #     if class_:
+        #         break
+        # event.class_ = Classification(
+        #     class_=class_,
+        #     classified_by=ClassificationRole.AI,
+        #     classified_at=datetime.datetime.now().strftime(TIMESTAMP_FORMAT),
+        #     confidence=confidence
+        # )
+        # if confidence > 0.9:
+        #     event.class_.classification_approved = True
+        # else:
+        #     event.class_.classification_approved = False
+        #     print(class_, confidence)
+        # print('Added class')
         
