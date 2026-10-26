@@ -6,19 +6,19 @@ export class TabTracker {
         this.userTracked = true;
     }
 
-    async saveCurrentSession() {
-        if (!this.userTracked) return;
+    async saveCurrentSession(tab) {
+        if (!this.userTracked || Object.keys(tab).length === 0) return;
  
         try {
-            const res = await fetch("http://127.0.0.1:8000/browser_event", {
+            const res = await fetch("http://127.0.0.1:8080/browser_event", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    url: this.previousTab.url,
-                    title: this.previousTab.title,
-                    eventStartTime: this.previousTab.eventStartTime,
+                    url: tab.url,
+                    title: tab.title,
+                    eventStartTime: tab.eventStartTime,
                     eventEndTime: Date.now()
                 })
             });
@@ -26,7 +26,7 @@ export class TabTracker {
 
             if (!res.ok) throw new Error("Save failed");
 
-            console.log("Saved:", this.currentTab.url);
+            console.log("Saved:", tab.url);
         
         } catch (err) {
             console.error("Save failed", err);
@@ -49,10 +49,7 @@ export class TabTracker {
             this.currentTab = null;
             this.userTracked = false;
         }
-        await this.saveCurrentSession();
-
-
-        // console.log("Tracking:", this.currentTab.url);
+        await this.saveCurrentSession(this.previousTab);
 
     }
 }

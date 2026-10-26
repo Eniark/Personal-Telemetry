@@ -62,42 +62,15 @@ chrome.windows.onFocusChanged.addListener(async (windowId) => {
         return
     }
     console.log(`onFocusChanged: Focus is back.`)
-    
-    const tabs = await chrome.tabs.query({
-        active: true,
-        currentWindow: true
-    });
-    if (tabs[0].id === tabTracker.currentTab.id) {
-        tabTracker.registerTab(tabs[0].id);
-    }
+    tabTracker.userTracked = true
 });
 
 async function checkBrowserFocus(){
     let browser = await chrome.windows.getCurrent()
     if (!browser.focused && tabTracker.userTracked) {
         console.log("Browser lost focus.")
+        await tabTracker.saveCurrentSession(tabTracker.currentTab);
         tabTracker.userTracked = false
+        tabTracker.currentTab = null;
     }
 }
-
-//
-// IDLE DETECTION
-//
-chrome.idle.setDetectionInterval(60);
-
-chrome.idle.onStateChanged.addListener(async (state) => {
-    console.log("onStateChanged")
-    const isActive = state === "active";
-    if (!isActive) {
-        await tabTracker.saveCurrentSession();
-    }
-    else {
-        tabTracker.registerTab(tabTracker.currentTab.id); // When user comes back from idle -> same tab will be on the screen
-    }
-    tabTracker.userTracked = isActive;
-});
-
-
-
-
-
