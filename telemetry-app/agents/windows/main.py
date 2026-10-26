@@ -9,6 +9,7 @@ import win32api
 import threading
 import pybreaker
 
+from .api import WindowsAgentServer
 from dotenv import load_dotenv
 from queue import Queue
 from collections import deque
@@ -18,137 +19,151 @@ from shared.enums import EventType
 
 load_dotenv()
 
-PYBREAKER_NUM_RETRIES = 3
-PYBREAKER_STREAM_LOCK_SECONDS = 5
-api_breaker = pybreaker.CircuitBreaker(
-    fail_max=PYBREAKER_NUM_RETRIES,
-    reset_timeout=PYBREAKER_STREAM_LOCK_SECONDS
-)
 
-def get_process_info(window_id):
-    _, pid = win32process.GetWindowThreadProcessId(window_id)
-    try:
-        process = psutil.Process(pid)
-        return process.name(), process.exe()
-    except psutil.NoSuchProcess:
-        return "Unknown", None
 
-def get_event_category(executable):
-    BROWSER_EXECUTABLES = {
-        "chrome.exe",
-        "msedge.exe",
-        "firefox.exe",
-        "opera.exe",
-        "brave.exe",
-        "vivaldi.exe"
-    }
-    
-    if executable.lower() in BROWSER_EXECUTABLES:
-        return EventType.BROWSER.value
-    return EventType.OS.value
 
-def get_publisher_name(exe_path):
-    try:
-        lang, codepage = win32api.GetFileVersionInfo(
-            exe_path,
-            r"\VarFileInfo\Translation"
-        )[0]
+class WindowsEventListener:
+    def __init__(self, event_queue: Queue):
+        self.event_queue = event_queue
+        self.current_object = {}
+        self.recent_windows = deque(maxlen=5)
+        self.user32 = ctypes.windll.user32
 
-        info = win32api.GetFileVersionInfo(
-            exe_path,
-            fr"\StringFileInfo\{lang:04x}{codepage:04x}\CompanyName"
+        self._PYBREAKER_NUM_RETRIES = 3
+        self._PYBREAKER_STREAM_LOCK_SECONDS = 5
+
+        self.api_breaker = pybreaker.CircuitBreaker(
+            fail_max=self._PYBREAKER_NUM_RETRIES,
+            reset_timeout=self._PYBREAKER_STREAM_LOCK_SECONDS
         )
 
-        return info
-    except Exception:
-        return None
+        self.hook_cb = ctypes.WINFUNCTYPE(
+            None,
+            ctypes.c_void_p,
+            ctypes.c_uint,
+            ctypes.c_void_p,
+            ctypes.c_long,
+            ctypes.c_long,
+            ctypes.c_uint,
+            ctypes.c_uint
+        )(self.__callback)
 
-
-@api_breaker
-def send_data(data):
-    response = requests.post(f"http://{HOST}:{PORT}/os_event", json=data, timeout=PYBREAKER_STREAM_LOCK_SECONDS-3)
-    response.raise_for_status()
-    
-
-def sender():
-    while True:
-        data = event_queue.get()
+    def get_process_info(self, window_id):
+        _, pid = win32process.GetWindowThreadProcessId(window_id)
         try:
-            print(
-                data["executable"],
-                data["title"],
-                data["publisher"],
-                data["category"],
-            )
-            send_data(data)
-        except pybreaker.CircuitBreakerError:
-            print(f"API temporarily unavailable. Locking for {PYBREAKER_STREAM_LOCK_SECONDS} seconds.")
-        except requests.RequestException as e:
-            print(f"Failed to send event: {e}")
-        finally:
-            event_queue.task_done()
+            process = psutil.Process(pid)
+            return process.name(), process.exe()
+        except psutil.NoSuchProcess:
+            return "Unknown", None
 
-
-
-def callback(hook, event, hwnd, idObject, idChild, thread, time):
-    global current_object
-    if hwnd: # the window ID
-        length = user32.GetWindowTextLengthW(hwnd) # needed for C-language as C requires a fixed size memory buffer
-        buffer = ctypes.create_unicode_buffer(length + 1)
-        user32.GetWindowTextW(hwnd, buffer, length + 1)
+    def get_event_category(self, executable):
+        BROWSER_EXECUTABLES = {
+            "chrome.exe",
+            "msedge.exe",
+            "firefox.exe",
+            "opera.exe",
+            "brave.exe",
+            "vivaldi.exe"
+        }
         
-        if buffer.value:
-            executable, absolute_path = get_process_info(hwnd)
-            publisher_name = get_publisher_name(absolute_path)
-            process_category = get_event_category(executable)
-            next_object = {
-                "executable": executable,
-                "title": buffer.value,
-                "publisher": publisher_name,
-                "category": process_category,
-                "event_start_time": datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
-            }
+        if executable.lower() in BROWSER_EXECUTABLES:
+            return EventType.BROWSER.value
+        return EventType.OS.value
 
-            if current_object:
-                current_object["event_end_time"] = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
-                current_object['recent_windows'] =  tuple(recent_windows)
-                
-                recent_object = current_object.copy()
-                del recent_object['recent_windows']
-                recent_windows.appendleft(recent_object)
-                event_queue.put(current_object)
+    def get_publisher_name(self, exe_path):
+        try:
+            lang, codepage = win32api.GetFileVersionInfo(
+                exe_path,
+                r"\VarFileInfo\Translation"
+            )[0]
 
-            current_object = next_object
+            info = win32api.GetFileVersionInfo(
+                exe_path,
+                fr"\StringFileInfo\{lang:04x}{codepage:04x}\CompanyName"
+            )
+
+            return info
+        except Exception:
+            return None
+
+    def start_listening(self):
+        listener_thread = threading.Thread(target=self.__start_listening, daemon=True) # thread for start_listening process
+        listener_thread.start()
+
+    def __start_listening(self):
+        @self.api_breaker
+        def relay_data(data):
+            response = requests.post(f"http://{HOST}:{PORT}/os_event", json=data, timeout=self._PYBREAKER_STREAM_LOCK_SECONDS-3)
+            response.raise_for_status()
+
+        while True:
+            data = event_queue.get()
+            try:
+                print(
+                    data["executable"],
+                    data["title"],
+                    data["publisher"],
+                    data["category"],
+                )
+                relay_data(data)
+            except pybreaker.CircuitBreakerError:
+                print(f"API temporarily unavailable. Locking for {self._PYBREAKER_STREAM_LOCK_SECONDS} seconds.")
+            except requests.RequestException as e:
+                print(f"Failed to send event: {e}")
+            finally:
+                event_queue.task_done()
+
+
+
+    def __callback(self, hook, event, hwnd, idObject, idChild, thread, time):
+        if hwnd: # the window ID
+            length = self.user32.GetWindowTextLengthW(hwnd) # needed for C-language as C requires a fixed size memory buffer
+            buffer = ctypes.create_unicode_buffer(length + 1)
+            self.user32.GetWindowTextW(hwnd, buffer, length + 1)
+            
+            if buffer.value:
+                executable, absolute_path = self.get_process_info(hwnd)
+                publisher_name = self.get_publisher_name(absolute_path)
+                process_category = self.get_event_category(executable)
+                next_object = {
+                    "executable": executable,
+                    "title": buffer.value,
+                    "publisher": publisher_name,
+                    "category": process_category,
+                    "event_start_time": datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
+                }
+
+                if self.current_object:
+                    self.current_object["event_end_time"] = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
+                    self.current_object['recent_windows'] =  tuple(self.recent_windows)
+                    
+                    recent_object = self.current_object.copy()
+                    del recent_object['recent_windows']
+                    self.recent_windows.appendleft(recent_object)
+                    event_queue.put(self.current_object)
+
+                self.current_object = next_object
 
 
 
 if __name__=='__main__':
-    current_object = {}
-    
-    event_queue = Queue()
-    recent_windows = deque(maxlen=5)
-    user32 = ctypes.windll.user32
 
     HOST, PORT = get_env_variables()
+    event_queue = Queue()
+    listener = WindowsEventListener(event_queue)
+    listener.start_listening()
 
-    WinEventProc = ctypes.WINFUNCTYPE(
-        None, ctypes.c_void_p, ctypes.c_uint,
-        ctypes.c_void_p, ctypes.c_long, ctypes.c_long,
-        ctypes.c_uint, ctypes.c_uint
-    )
+    server = WindowsAgentServer(host="127.0.0.1", port=8080)
+    server.start()
 
-    threading.Thread(target=sender, daemon=True).start() # thread for sender process
-    hook_cb = WinEventProc(callback)
-
-
-    user32.SetWinEventHook(
+    listener.user32.SetWinEventHook(
         win32con.EVENT_SYSTEM_FOREGROUND, # Starting range of event types to track
         win32con.EVENT_SYSTEM_FOREGROUND, # Ending range of event types to track
         0,
-        hook_cb,
+        listener.hook_cb,
         0,
         0,
         win32con.WINEVENT_OUTOFCONTEXT
     )
-
     pythoncom.PumpMessages()
+    
