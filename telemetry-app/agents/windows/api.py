@@ -9,13 +9,13 @@ class WindowsAgentServer:
         self.port = port
         self.app = FastAPI()
 
-        self._register_routes()
+        self._register_endpoints()
 
-    def _register_routes(self):
+    def _register_endpoints(self):
         @self.app.post("/browser_event")
         async def receive_browser_event(event: dict):
-            print(event)
-            return {"status": "accepted"}
+            print('Browser event received')
+            return {"ok": True}
 
     def run(self):
         uvicorn.run(

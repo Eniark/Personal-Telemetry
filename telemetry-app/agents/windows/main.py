@@ -19,9 +19,6 @@ from shared.enums import EventType
 
 load_dotenv()
 
-
-
-
 class WindowsEventListener:
     def __init__(self, event_queue: Queue):
         self.event_queue = event_queue
@@ -114,7 +111,6 @@ class WindowsEventListener:
                 event_queue.task_done()
 
 
-
     def __callback(self, hook, event, hwnd, idObject, idChild, thread, time):
         if hwnd: # the window ID
             length = self.user32.GetWindowTextLengthW(hwnd) # needed for C-language as C requires a fixed size memory buffer
@@ -143,7 +139,7 @@ class WindowsEventListener:
                     event_queue.put(self.current_object)
 
                 self.current_object = next_object
-
+                print('OS event received')
 
 
 if __name__=='__main__':
