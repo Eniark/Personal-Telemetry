@@ -1,13 +1,14 @@
 import uvicorn
 from fastapi import FastAPI
 from threading import Thread
-
+from queue import Queue
 
 class WindowsAgentServer:
     def __init__(self, host="127.0.0.1", port=8080):
         self.host = host
         self.port = port
         self.app = FastAPI()
+        self.event_queue = Queue()
 
         self._register_endpoints()
 
@@ -15,6 +16,7 @@ class WindowsAgentServer:
         @self.app.post("/browser_event")
         async def receive_browser_event(event: dict):
             print('Browser event received')
+            self.event_queue.put(event)
             return {"ok": True}
 
     def run(self):
