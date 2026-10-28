@@ -5,6 +5,7 @@ from server.processing_layer.event import BrowserEvent, OperatingSystemEvent, Ev
 from server.event_classifier.backend.classifier import Classifier, Classification
 from server.event_classifier.backend.enums import ClassificationRole
 from server.event_classifier.backend.pipeline import ClassifierPipeline
+from shared.utils import convert_date_to_readable_format
 
 
 from shared.enums import EventType
@@ -26,7 +27,6 @@ class EventProcessor:
             for category in EventType
         }
         self.classifiers = classifiers
-        self._browser_events_window: list[BrowserEvent] = []
 
     def _flush_if_needed(self) -> None:  
         if len(self.events[EventType.OS]) > self.repository.batch_size:    
@@ -37,37 +37,31 @@ class EventProcessor:
                         self.events[category].clear()
         
         
-    def handle_browser_event(self, event: BrowserEvent):
+    def handle_browser_event(self, event: BrowserEvent, parent_event_id: int):
         if not self.event_filter.is_valid_event(event):
             logger.warning(f"[Event Processor] Filtered out Browser Event: {event.title} - {event.url}")
             return
 
         self.add_class(event=event)
-        self._browser_events_window.append(event) # the events are inserted in _handle_late_os_event due to late browser events
+        self.events[EventType.BROWSER].append(event)
         logger.info(f"[Event Processor] Added Browser Event to tracker: {event.title} - {event.url}")
 
 
     def handle_os_event(self, event: OperatingSystemEvent):
-        self._handle_late_os_event(event)
-
         if not self.event_filter.is_valid_event(event):
             logger.warning(f"[Event Processor] Filtered out OS Event: {event.process} - {event.id}")
             return
         
+        for browser_event in event.related_browser_events:
+            browser_event = BrowserEvent.from_schema(browser_event)
+            
+            logger.info(f"[API] Browser Event: {browser_event.title} - {browser_event.url}")
+            self.handle_browser_event(browser_event, parent_event_id=event.id)
+
         self.add_class(event=event)
         self.events[EventType.OS].append(event)
         logger.info(f"[Event Processor] Added OS Event to tracker: {event.process} - {event.id}")
         self._flush_if_needed()
-    
-    def _handle_late_os_event(self, event: OperatingSystemEvent) -> None:
-        if event.category == EventType.BROWSER and len(self._browser_events_window) != 0:
-            for browser_event in self._browser_events_window:
-                browser_event.os_event_id = event.id # attaching the OS event ID to the browser events that arrived before the OS event
-                browser_event.publisher = event.publisher
-                browser_event.process = event.process
-                logger.info(f"[Event Processor] Browser Event: {browser_event.url} - {browser_event.os_event_id}")
-            self.events[EventType.BROWSER].extend(self._browser_events_window)
-            self._browser_events_window.clear()
     
     def add_class(self, event: Event) -> Event:
         

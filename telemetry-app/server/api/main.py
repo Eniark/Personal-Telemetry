@@ -7,12 +7,12 @@ from server.db.db_connect import create_db_connection
 from server.processing_layer.event import PhoneMapper
 from server.processing_layer.main import EventProcessor, TelemetryRepository, BrowserEvent, OperatingSystemEvent
 from shared.configs import TIMESTAMP_FORMAT, LISTEN_TO_ALL_DEVICES
-from server.api.models import PhoneEventSchema, OSEventSchema, BrowserEventSchema
+from server.api.models import PhoneEventSchema, OSEventSchema
 from server.event_classifier.backend.classifier import HardCodedClassifier, MLClassifier, LLMClassifier
 from server.event_classifier.backend.pipeline import ClassifierPipeline
 from server.event_classifier.backend.event_feature_extractor import EventFeatureExtractor
 
-from shared.utils import convert_date_to_readable_format, get_env_variables
+from shared.utils import get_env_variables
 from dotenv import load_dotenv
 from shared.enums import EventType
 from server.logs.logger import logger
@@ -41,41 +41,10 @@ event_processor = EventProcessor(repository, [
     # llm_classifier
 ])
 
-@app.post("/browser_event")
-async def browser_event_endpoint(payload: BrowserEventSchema):
-    processing_time = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
-    event_start_time = convert_date_to_readable_format(payload.eventStartTime / 1000)
-    event_end_time = convert_date_to_readable_format(payload.eventStartTime / 1000)
-    event = BrowserEvent(
-        event_start_time = event_start_time,
-        event_end_time = event_end_time,
-        processing_time = processing_time,
-        url = payload.url,
-        title = payload.title,
-        category = EventType.BROWSER
-    )
-    logger.info(f"[API] Browser Event: {event.title} - {event.url}")
-    with tracer.start_as_current_span('handle_browser_event'):
-        event_processor.handle_browser_event(event)
-    
-    return {"ok": True}
-
 @app.post("/os_event")
 async def os_event_endpoint(payload: OSEventSchema):
-    processing_time = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
-    event = OperatingSystemEvent(
-        process = payload.executable,
-        title = payload.title,
-        description = None,
-        event_start_time = payload.event_start_time,
-        event_end_time = payload.event_end_time,
-        processing_time = processing_time,
-        category = EventType(payload.category),
-        publisher = payload.publisher,
-        id = str(uuid4()),
-        previous_events = payload.recent_windows
-    )
-    logger.info(f"[API] OS Event: {event.process} - {event.id}")
+    event = OperatingSystemEvent.from_schema(payload)
+    logger.info(f"[API] OS Event: {event.process} - {event.id} - Browser Events: {len(event.related_browser_events)}")
     with tracer.start_as_current_span('handle_os_event'):
         event_processor.handle_os_event(event)
     return {"ok": True}

@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 import datetime
 
-from server.api.models import PhoneEventSchema
+from server.api.models import BrowserEventSchema, OSEventSchema, PhoneEventSchema
 from shared.enums import EventType
 from shared.configs import TIMESTAMP_FORMAT
 from shared.utils import convert_date_to_readable_format
@@ -26,6 +26,21 @@ class BrowserEvent(Event):
     url: str 
     os_event_id: int | None = None
 
+    @classmethod
+    def from_schema(cls, event: BrowserEventSchema) -> "BrowserEvent":
+        processing_time = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
+        event_start_time = convert_date_to_readable_format(event.eventStartTime / 1000)
+        event_end_time = convert_date_to_readable_format(event.eventEndTime / 1000)
+
+        return cls(
+            event_start_time=event_start_time,
+            event_end_time=event_end_time,
+            processing_time=processing_time,
+            url=event.url,
+            title=event.title,
+            category=EventType.BROWSER,
+        )
+
     def __repr__(self):
         return f"<Browser Activity: {self.url=}, {self.os_event_id=}>"
     
@@ -35,7 +50,25 @@ class OperatingSystemEvent(Event):
     id: str
     description: str | None = None
     previous_events: list = field(default_factory=list, kw_only=True)
+    related_browser_events: list = field(default_factory=list, kw_only=True)
 
+    @classmethod
+    def from_schema(cls, event: OSEventSchema) -> "OperatingSystemEvent":
+        processing_time = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
+        return cls(
+            process = event.executable,
+            title = event.title,
+            description = None,
+            event_start_time = event.event_start_time,
+            event_end_time = event.event_end_time,
+            processing_time = processing_time,
+            category = EventType(event.category),
+            publisher = event.publisher,
+            id = str(uuid4()),
+            previous_events = event.recent_windows,
+            related_browser_events = event.browser_events
+        )
+    
     def __repr__(self):
         return f"<OS Activity: {self.process=}, {self.category=}>"
     
