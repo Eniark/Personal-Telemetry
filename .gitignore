@@ -8,7 +8,7 @@ telemetryEnv/
 # Logs / data
 telemetry-app/server/logs/events/
 telemetry-app/server/logs/traces/
-telemetry.db
+*.db
 # =======
 
 

@@ -1,12 +1,12 @@
-import sqlite3
 from shared.configs import QUEUE_DB_PATH
+from shared.utils import create_db_connection
 
-
-with sqlite3.connect(QUEUE_DB_PATH, check_same_thread=False) as conn:
+print(QUEUE_DB_PATH)
+with create_db_connection(QUEUE_DB_PATH) as conn:
 
     cursor = conn.cursor()
     
-    # The table for events fo
+    # The table for events will act as a durable storage queue
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS events
@@ -23,6 +23,7 @@ with sqlite3.connect(QUEUE_DB_PATH, check_same_thread=False) as conn:
             processing_time TEXT,
             previous_events TEXT,
             acknowledged BOOL,
-            browser_events TEXT
+            browser_events TEXT,
+            inserted_at TEXT
         )
         """)
