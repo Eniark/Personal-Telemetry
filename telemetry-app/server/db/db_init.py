@@ -1,6 +1,6 @@
 from shared.configs import DB_PATH
 
-from .db_connect import create_db_connection
+from shared.utils import create_db_connection
 with create_db_connection(DB_PATH) as conn:
 
     conn.execute("PRAGMA foreign_keys = ON;") # enforces foreign key constraints
