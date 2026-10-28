@@ -13,6 +13,12 @@ class PhoneEventSchema(BaseModel):
     isVerified: bool
     isSystemEvent: bool
 
+class BrowserEventSchema(BaseModel):
+    url: str
+    title: str
+    eventStartTime: int # unix-style timestamp
+    eventEndTime: int # unix-style timestamp
+
 class OSEventSchema(BaseModel):
     executable: str
     title: str
@@ -21,9 +27,6 @@ class OSEventSchema(BaseModel):
     event_start_time: str
     event_end_time: str
     recent_windows: list
+    browser_events: list[BrowserEventSchema]
 
-class BrowserEventSchema(BaseModel):
-    url: str
-    title: str
-    eventStartTime: int # unix-style timestamp
-    eventEndTime: int # unix-style timestamp
+

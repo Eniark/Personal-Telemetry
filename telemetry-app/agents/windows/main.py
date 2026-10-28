@@ -102,8 +102,8 @@ class WindowsEventListener:
     def __start_listening(self):
         @self.api_breaker
         def relay_data(data):
-            # response = requests.post(f"http://{HOST}:{PORT}/os_event", json=data, timeout=self._PYBREAKER_STREAM_LOCK_SECONDS-3)
-            # response.raise_for_status()
+            response = requests.post(f"http://{HOST}:{PORT}/os_event", json=data, timeout=self._PYBREAKER_STREAM_LOCK_SECONDS-3)
+            response.raise_for_status()
             pass
 
         while True:
