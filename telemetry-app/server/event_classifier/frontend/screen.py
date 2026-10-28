@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from server.db.db_connect import create_db_connection
+from shared.utils import create_db_connection
 from server.db.repository import TelemetryRepository
 from shared.configs import DB_PATH, MEDIA_FOLDER
 

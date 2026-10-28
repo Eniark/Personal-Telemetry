@@ -20,6 +20,9 @@ MEDIA_FOLDER = PROJECT_ROOT / 'server' / 'event_classifier' / 'frontend' / 'medi
 DB_NAME = "telemetry.db"
 DB_PATH = PROJECT_ROOT / "server" / "db" / DB_NAME
 
+QUEUE_DB_NAME = "event_queue.db"
+QUEUE_DB_PATH = PROJECT_ROOT / "agents" / "window" / "db" / DB_NAME
+
 # Classifier configs
 MODEL_PATH = PROJECT_ROOT / 'server' / 'event_classifier'/ 'backend'/ 'event_classifier.joblib'
 

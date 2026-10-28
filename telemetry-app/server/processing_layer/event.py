@@ -56,17 +56,17 @@ class OperatingSystemEvent(Event):
     def from_schema(cls, event: OSEventSchema) -> "OperatingSystemEvent":
         processing_time = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
         return cls(
-            process = event.executable,
-            title = event.title,
-            description = None,
-            event_start_time = event.event_start_time,
-            event_end_time = event.event_end_time,
-            processing_time = processing_time,
-            category = EventType(event.category),
-            publisher = event.publisher,
-            id = str(uuid4()),
-            previous_events = event.recent_windows,
-            related_browser_events = event.browser_events
+            process=event.executable,
+            title=event.title,
+            description=None,
+            event_start_time=event.event_start_time,
+            event_end_time=event.event_end_time,
+            processing_time=processing_time,
+            category=EventType(event.category),
+            publisher=event.publisher,
+            id=str(uuid4()),
+            previous_events=event.recent_windows,
+            related_browser_events=event.browser_events
         )
     
     def __repr__(self):

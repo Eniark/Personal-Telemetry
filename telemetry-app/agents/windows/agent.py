@@ -8,13 +8,14 @@ import psutil
 import win32api
 import threading
 import pybreaker
+import os
 
 from .api import WindowsAgentServer
 from dotenv import load_dotenv
 from queue import Queue, Empty
 from collections import deque
 from shared.configs import TIMESTAMP_FORMAT
-from shared.utils import get_env_variables
+from shared.utils import validate_env_variable
 from shared.enums import EventType
 from uuid import uuid4
 
@@ -176,9 +177,12 @@ class WindowsEventListener:
 
 if __name__=='__main__':
 
-    HOST, PORT = get_env_variables()
+    validated_env_vars = validate_env_variable(REQUIRED_ENV_VARS=["WINDOWS_AGENT_SERVER_PORT"])
+    PORT = validated_env_vars[0]
+    HOST = os.getenv("WINDOWS_AGENT_SERVER_HOST")
+
     event_queue = Queue()
-    server = WindowsAgentServer(host="127.0.0.1", port=8080)
+    server = WindowsAgentServer(host=HOST, port=PORT)
     listener = WindowsEventListener(event_queue, browser_event_queue=server.event_queue)
     listener.start_listening()
 
