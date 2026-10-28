@@ -7,7 +7,7 @@ export class TabTracker {
     }
 
     async saveCurrentSession(tab) {
-        if (!this.userTracked || Object.keys(tab).length === 0) return;
+        if (!this.userTracked || !tab || Object.keys(tab).length === 0) return;
  
         try {
             const res = await fetch("http://127.0.0.1:8080/browser_event", {

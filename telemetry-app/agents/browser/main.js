@@ -69,7 +69,6 @@ async function checkBrowserFocus(){
     let browser = await chrome.windows.getCurrent()
     if (!browser.focused && tabTracker.userTracked) {
         console.log("Browser lost focus.")
-        await tabTracker.saveCurrentSession(tabTracker.currentTab);
         tabTracker.userTracked = false
         tabTracker.currentTab = null;
     }
