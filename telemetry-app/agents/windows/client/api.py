@@ -15,7 +15,6 @@ class WindowsAgentServer:
     def _register_endpoints(self):
         @self.app.post("/browser_event")
         async def receive_browser_event(event: dict):
-            print('Browser event received')
             self.event_queue.put(event)
             return {"ok": True}
 

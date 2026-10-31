@@ -14,7 +14,7 @@ class TelemetryRepository:
         self.db = db
         self.batch_size = 1
 
-    def upsert_events(self, events: dict[EventType, list[OperatingSystemEvent]]) -> bool:
+    def insert_events(self, events: dict[EventType, list[OperatingSystemEvent]]) -> bool:
         # in SQLite executemany does not return the list of last inserted IDs.
         self.db.executemany(INSERT_OS_EVENTS_QUERY, (
             (

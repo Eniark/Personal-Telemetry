@@ -5,7 +5,7 @@ import sqlite3
 from shared.configs import TIMESTAMP_FORMAT
 
 
-def validate_env_variable(REQUIRED_ENV_VARS = ["PORT"]):
+def validate_env_variable(REQUIRED_ENV_VARS = ["TELEMETRY_SERVER_PORT"]):
     validated_env_vars = []
     
     for var in REQUIRED_ENV_VARS:
