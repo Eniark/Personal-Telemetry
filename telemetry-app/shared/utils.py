@@ -12,7 +12,9 @@ def validate_env_variable(REQUIRED_ENV_VARS = ["PORT"]):
         if os.getenv(var) is None:
             raise ValueError(f'"{var}" must be defined in the .env file')
         else:
+            var = os.getenv(var)
             try:
+                print(var)
                 var = int(var) # for port-like variables
             except TypeError:
                 pass
