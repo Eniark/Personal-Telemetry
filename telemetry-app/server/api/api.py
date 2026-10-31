@@ -40,11 +40,12 @@ event_processor = EventProcessor(repository, [
 ])
 
 @app.post("/os_event")
-async def os_event_endpoint(payload: OSEventSchema):
-    event = OperatingSystemEvent.from_schema(payload)
-    logger.info(f"[API] OS Event: {event.process} - {event.id} - Browser Events: {len(event.related_browser_events)}")
-    with tracer.start_as_current_span('handle_os_event'):
-        event_processor.handle_os_event(event)
+async def os_event_endpoint(payload: list[OSEventSchema]):
+    for event in payload:
+        event = OperatingSystemEvent.from_schema(event)
+        logger.info(f"[API] OS Event: {event.process} - {event.id} - Browser Events: {len(event.related_browser_events)}")
+        with tracer.start_as_current_span('handle_os_event'):
+            event_processor.handle_os_event(event)
     return {"ok": True}
 
 @app.post("/phone_event")
@@ -62,13 +63,14 @@ async def health():
 
 
 if __name__ == "__main__":
-    validated_env_vars = validate_env_variable(REQUIRED_ENV_VARS=["PORT"])
-    PORT = validated_env_vars[0]
-    HOST = os.getenv("HOST")
+    validated_env_vars = validate_env_variable(REQUIRED_ENV_VARS=["TELEMETRY_SERVER_PORT"])
+    TELEMETRY_SERVER_PORT = validated_env_vars[0]
+    TELEMETRY_SERVER_HOST = os.getenv("TELEMETRY_SERVER_HOST")
 
     if LISTEN_TO_ALL_DEVICES:
-        HOST = '0.0.0.0'
+        TELEMETRY_SERVER_HOST = '0.0.0.0'
 
     uvicorn.run(
-        "server.api.main:app", host=HOST, port=PORT, reload=True
+        "server.api.api:app", host=TELEMETRY_SERVER_HOST, port=TELEMETRY_SERVER_PORT, reload=True
     )
+    
