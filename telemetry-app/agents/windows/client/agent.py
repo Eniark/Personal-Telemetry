@@ -1,4 +1,5 @@
 import ctypes
+import time
 import win32con
 import pythoncom
 import requests
@@ -7,7 +8,6 @@ import win32process
 import psutil
 import win32api
 import threading
-import pybreaker
 import os
 
 from .api import WindowsAgentServer
@@ -32,15 +32,12 @@ class WindowsEventListener:
         self.recent_windows = deque(maxlen=5)
         self.user32 = ctypes.windll.user32
         self.browser_event_queue = browser_event_queue
-        self.api_healthy = True
 
-        self._PYBREAKER_NUM_RETRIES = 3
-        self._PYBREAKER_STREAM_LOCK_SECONDS = 5
-
-        self.api_breaker = pybreaker.CircuitBreaker(
-            fail_max=self._PYBREAKER_NUM_RETRIES,
-            reset_timeout=self._PYBREAKER_STREAM_LOCK_SECONDS
-        )
+        # API-related properties
+        self.retry_delay = 60
+        self.max_retry_delay = 900
+        self.next_retry_at = 0
+        # =============
 
         self.hook_cb = ctypes.WINFUNCTYPE(
             None,
@@ -63,7 +60,7 @@ class WindowsEventListener:
             win32con.WINEVENT_OUTOFCONTEXT
         )
 
-    def get_process_info(self, window_id):
+    def get_process_info(self, window_id: str):
         _, pid = win32process.GetWindowThreadProcessId(window_id)
         try:
             process = psutil.Process(pid)
@@ -71,7 +68,7 @@ class WindowsEventListener:
         except psutil.NoSuchProcess:
             return "Unknown", None
 
-    def get_event_category(self, executable):
+    def get_event_category(self, executable: str):
         BROWSER_EXECUTABLES = {
             "chrome.exe",
             "msedge.exe",
@@ -101,38 +98,53 @@ class WindowsEventListener:
         except Exception:
             return None
 
-    def start_listening(self):
-        listener_thread = threading.Thread(target=self.__start_listening, daemon=True) # thread for start_listening process
-        listener_thread.start()
+    def monitor_queue(self):
+        monitor_thread = threading.Thread(target=self.__monitor_queue, daemon=True) # thread for monitor_queue process
+        monitor_thread.start()
 
-    def __start_listening(self):
-        @self.api_breaker
-        def relay_data(data):
-            response = requests.post(f"http://{HOST}:{PORT}/os_event", json=data, timeout=self._PYBREAKER_STREAM_LOCK_SECONDS-3)
-            response.raise_for_status()
-            pass
+    def __monitor_queue(self):
 
         while True:
-            data = event_queue.get()
-            # try:
-            #     if not self.api_healthy:
-            #         self.check_api_health()
-            # except requests.HTTPError:
-            #     self.api_healthy = False
-            #     repository.insert_event(event=data)
+            data = [event_queue.get()]
+            pending_events = repository.get_pending_events()
+            data.extend(pending_events)
+            
             try:
-                print(
-                    data["executable"],
-                    data["title"],
-                    data["publisher"],
-                    data["category"],
-                    data['browser_events']
-                )
-                relay_data(data)
-            except pybreaker.CircuitBreakerError:
-                print(f"API temporarily unavailable. Locking for {self._PYBREAKER_STREAM_LOCK_SECONDS} seconds.")
-            except requests.RequestException as e:
-                print(f"Failed to send event: {e}")
+                if time.monotonic() < self.next_retry_at:
+                    for event in data:
+                        event['sent_at'] = None
+                    repository.upsert_events(events=data, are_acknowledged=False)
+                    continue
+
+                try:
+                    for event in data:
+                        event['sent_at'] = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
+                    response = requests.post(f"http://{TELEMETRY_SERVER_HOST}:{TELEMETRY_SERVER_PORT}/os_event", json=data)
+                    print(response.text)
+                    response.raise_for_status()
+
+                    repository.upsert_events(events=data, are_acknowledged=True)
+
+                    self.retry_delay = 60
+                    self.next_retry_at = 0
+
+                except requests.RequestException as e:
+                    print(f"API is unavailable: {e}")
+                    for event in data:
+                        event['sent_at'] = None
+
+                    repository.upsert_events(events=data, are_acknowledged=False)
+
+                    self.next_retry_at = time.monotonic() + self.retry_delay
+
+                    print(f"Next retry in {self.retry_delay} seconds.")
+
+                    # Increasing the retry delay before the next request
+                    self.retry_delay = min(
+                        self.retry_delay * 2,
+                        self.max_retry_delay
+                    )
+
             finally:
                 event_queue.task_done()
 
@@ -148,10 +160,6 @@ class WindowsEventListener:
 
         return events
 
-    def check_api_health(self):
-        request = requests.get("http://{HOST}:{PORT}/health")
-        request.raise_for_status()
-
     def __callback(self, hook, event, hwnd, idObject, idChild, thread, time):
         if hwnd: # the window ID
             length = self.user32.GetWindowTextLengthW(hwnd) # needed for C-language as C requires a fixed size memory buffer
@@ -164,11 +172,8 @@ class WindowsEventListener:
                 process_category = self.get_event_category(executable)
                 if self.event:
                     self.event["browser_events"].extend(self.collect_browser_events())
-
                     self.event["event_end_time"] = (datetime.datetime.now().strftime(TIMESTAMP_FORMAT))
-                    self.event["recent_windows"] = tuple(
-                        self.recent_windows
-                    )
+                    self.event["recent_windows"] = tuple(self.recent_windows)
 
                     recent_object = self.event.copy()
                     del recent_object["recent_windows"]
@@ -181,29 +186,27 @@ class WindowsEventListener:
                     "title": buffer.value,
                     "publisher": publisher_name,
                     "category": process_category,
-                    "event_start_time": datetime.datetime.now().strftime(
-                        TIMESTAMP_FORMAT
-                    ),
+                    "event_start_time": datetime.datetime.now().strftime(TIMESTAMP_FORMAT),
                     "browser_events": [],
                     "id": str(uuid4())
                 }
-                print('OS event received')
 
 
 if __name__=='__main__':
 
-    validated_env_vars = validate_env_variable(REQUIRED_ENV_VARS=["WINDOWS_AGENT_SERVER_PORT"])
-    PORT = validated_env_vars[0]
-    HOST = os.getenv("WINDOWS_AGENT_SERVER_HOST")
+    validated_env_vars = validate_env_variable(REQUIRED_ENV_VARS=["WINDOWS_AGENT_SERVER_PORT", "TELEMETRY_SERVER_PORT"])
+    WINDOWS_AGENT_SERVER_HOST = validated_env_vars[0]
+    TELEMETRY_SERVER_PORT = validated_env_vars[1]
+    TELEMETRY_SERVER_HOST = os.getenv("WINDOWS_AGENT_SERVER_HOST")
 
     event_queue = Queue()
     db = create_db_connection(QUEUE_DB_PATH)
     repository = EventRepository(db)
-    server = WindowsAgentServer(host=HOST, port=PORT)
+    server = WindowsAgentServer(host=TELEMETRY_SERVER_HOST, port=WINDOWS_AGENT_SERVER_HOST)
     listener = WindowsEventListener(event_queue, browser_event_queue=server.event_queue, queue_repository=repository)
 
     server.start()
-    listener.start_listening()
+    listener.monitor_queue()
     
     pythoncom.PumpMessages()
     
