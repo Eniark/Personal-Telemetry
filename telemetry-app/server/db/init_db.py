@@ -1,6 +1,6 @@
 from shared.configs import DB_PATH
-
 from shared.utils import create_db_connection
+
 with create_db_connection(DB_PATH) as conn:
 
     conn.execute("PRAGMA foreign_keys = ON;") # enforces foreign key constraints
@@ -42,7 +42,7 @@ with create_db_connection(DB_PATH) as conn:
             class TEXT,
             classified_at TEXT,
             classified_by TEXT,
-            classification_approved BOOL
+            classification_approved BOOL,
             FOREIGN KEY (os_event_id) REFERENCES os_event(event_id) 
         )
         """)

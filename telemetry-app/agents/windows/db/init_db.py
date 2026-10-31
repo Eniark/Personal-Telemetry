@@ -11,18 +11,17 @@ with create_db_connection(QUEUE_DB_PATH) as conn:
         CREATE TABLE IF NOT EXISTS events
         (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            event_id TEXT,
+            event_id TEXT UNIQUE,
             title TEXT,
             executable TEXT,
             publisher TEXT,
-            description TEXT,
             event_start_time TEXT,
             event_end_time TEXT,
             type TEXT,
-            processing_time TEXT,
             previous_events TEXT,
             acknowledged BOOL,
             browser_events TEXT,
-            inserted_at TEXT
+            inserted_at TEXT,
+            sent_at TEXT
         )
         """)
