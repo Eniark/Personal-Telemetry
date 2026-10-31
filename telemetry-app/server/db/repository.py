@@ -1,19 +1,20 @@
 from sqlite3 import Connection
-
 from shared.enums import EventType
 from server.processing_layer.event import OperatingSystemEvent
 from server.processing_layer.sql_queries import INSERT_OS_EVENTS_QUERY, INSERT_BROWSER_EVENTS_QUERY, UPDATE_EVENT_CLASS_QUERY
 from server.event_classifier.backend.classifier import Classification
 from server.logs.logger import logger
-import json, sqlite3
 from typing import Any
+
+import json, sqlite3
+import server.db.init_db
 
 class TelemetryRepository:
     def __init__(self, db: Connection):
         self.db = db
         self.batch_size = 1
 
-    def insert_events(self, events: dict[EventType, list[OperatingSystemEvent]]) -> bool:
+    def upsert_events(self, events: dict[EventType, list[OperatingSystemEvent]]) -> bool:
         # in SQLite executemany does not return the list of last inserted IDs.
         self.db.executemany(INSERT_OS_EVENTS_QUERY, (
             (
