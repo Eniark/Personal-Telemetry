@@ -37,12 +37,12 @@ class EventProcessor:
                         self.events[category].clear()
         
         
-    def handle_browser_event(self, event: BrowserEvent, parent_event_id: int):
+    def handle_browser_event(self, event: BrowserEvent):
         if not self.event_filter.is_valid_event(event):
             logger.warning(f"[Event Processor] Filtered out Browser Event: {event.title} - {event.url}")
             return
 
-        self.add_class(event=event)
+        self.add_class(event)
         self.events[EventType.BROWSER].append(event)
         logger.info(f"[Event Processor] Added Browser Event to tracker: {event.title} - {event.url}")
 
@@ -56,26 +56,26 @@ class EventProcessor:
             browser_event = BrowserEvent.from_schema(browser_event)
             
             logger.info(f"[API] Browser Event: {browser_event.title} - {browser_event.url}")
-            self.handle_browser_event(browser_event, parent_event_id=event.id)
+            self.handle_browser_event(browser_event)
 
-        self.add_class(event=event)
+        self.add_class(event)
         self.events[EventType.OS].append(event)
         logger.info(f"[Event Processor] Added OS Event to tracker: {event.process} - {event.id}")
         self._flush_if_needed()
     
-    def add_class(self, event: Event) -> Event:
+    def add_class(self, event: Event) -> None:
         
         for classifier in self.classifiers:
-            confidence, class_ = classifier.enrich_and_predict(event=event)
+            confidence, class_ = classifier.enrich_and_predict(event)
             if class_:
                 break
         class_ = Classification( # move this upstream to correctly assign the classified_by field 
             class_=class_,
             classified_by=ClassificationRole.AI,
             classified_at=datetime.datetime.now().strftime(TIMESTAMP_FORMAT),
-            confidence=confidence
+            confidence=confidence,
+            classification_approved=confidence > 0.9
         )
-        class_.classification_approved = confidence > 0.9
 
         event.class_ = class_
         

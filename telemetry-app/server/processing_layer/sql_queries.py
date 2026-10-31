@@ -39,12 +39,13 @@ INSERT_OS_EVENTS_QUERY = """
 """
 
 SELECT_OS_EVENTS_QUERY = """
-    SELECT id, event_id, type, title, executable, event_start_time, event_end_time FROM os_events
-    WHERE class IS NULL;
+    SELECT id, event_id, type, title, executable, event_start_time, event_end_time, ROUND(model_confidence, 3) AS model_confidence FROM os_events
+    WHERE classification_approved=false
+    ORDER BY event_start_time DESC;
 """
 
 SELECT_BROWSER_EVENTS_QUERY = """
-    SELECT id, url, title, event_start_time, event_end_time FROM browser_events
+    SELECT id, url, title, event_start_time, event_end_time, ROUND(model_confidence, 3) AS model_confidence FROM browser_events
     WHERE os_event_id=?
 """
 

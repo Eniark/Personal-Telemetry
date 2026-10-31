@@ -110,6 +110,7 @@ class BrowserEventsTable(TelemetryTable):
         "title": Column(title="title", width=300),
         "event_start_time": Column(title="Event Start Time", text_alignment="center"),
         "event_end_time": Column(title="Event End Time", text_alignment="center"),
+        "confidence": Column(title="Confidence", width=100, text_alignment="left"),
         "class": Column(title="Proposed Class", width=100, text_alignment="center"),
         "action": Column(title="Action", width=75, text_alignment="center"),
     }
@@ -131,6 +132,7 @@ class OsEventsTable(TelemetryTable):
         "executable": Column(title="Executable", width=200),
         "event_start_time": Column(title="Event Start Time", text_alignment="center"),
         "event_end_time": Column(title="Event End Time", text_alignment="center"),
+        "confidence": Column(title="Confidence", width=100, text_alignment="left"),
         "class": Column(title="Proposed Class", width=100, text_alignment="center"),
         "action": Column(title="Action", width=75, text_alignment="center"),
     }
