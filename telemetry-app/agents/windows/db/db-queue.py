@@ -1,7 +1,6 @@
 from shared.configs import QUEUE_DB_PATH
 from shared.utils import create_db_connection
 
-print(QUEUE_DB_PATH)
 with create_db_connection(QUEUE_DB_PATH) as conn:
 
     cursor = conn.cursor()

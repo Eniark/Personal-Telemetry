@@ -11,6 +11,7 @@ import pybreaker
 import os
 
 from .api import WindowsAgentServer
+from agents.windows.db.repository import EventRepository
 from dotenv import load_dotenv
 from queue import Queue, Empty
 from collections import deque
@@ -18,16 +19,20 @@ from shared.configs import TIMESTAMP_FORMAT
 from shared.utils import validate_env_variable
 from shared.enums import EventType
 from uuid import uuid4
+from shared.utils import create_db_connection
+from shared.configs import QUEUE_DB_PATH
 
 load_dotenv()
 
 class WindowsEventListener:
-    def __init__(self, event_queue: Queue, browser_event_queue: list):
+    def __init__(self, event_queue: Queue, browser_event_queue: list, queue_repository: EventRepository):
+        self.repository = queue_repository
         self.event_queue = event_queue
-        self.current_object = {}
+        self.event = {}
         self.recent_windows = deque(maxlen=5)
         self.user32 = ctypes.windll.user32
         self.browser_event_queue = browser_event_queue
+        self.api_healthy = True
 
         self._PYBREAKER_NUM_RETRIES = 3
         self._PYBREAKER_STREAM_LOCK_SECONDS = 5
@@ -109,6 +114,12 @@ class WindowsEventListener:
 
         while True:
             data = event_queue.get()
+            # try:
+            #     if not self.api_healthy:
+            #         self.check_api_health()
+            # except requests.HTTPError:
+            #     self.api_healthy = False
+            #     repository.insert_event(event=data)
             try:
                 print(
                     data["executable"],
@@ -126,7 +137,7 @@ class WindowsEventListener:
                 event_queue.task_done()
 
 
-    def drain_browser_events(self):
+    def collect_browser_events(self):
         events = []
 
         while True:
@@ -136,6 +147,10 @@ class WindowsEventListener:
                 break
 
         return events
+
+    def check_api_health(self):
+        request = requests.get("http://{HOST}:{PORT}/health")
+        request.raise_for_status()
 
     def __callback(self, hook, event, hwnd, idObject, idChild, thread, time):
         if hwnd: # the window ID
@@ -147,21 +162,21 @@ class WindowsEventListener:
                 executable, absolute_path = self.get_process_info(hwnd)
                 publisher_name = self.get_publisher_name(absolute_path)
                 process_category = self.get_event_category(executable)
-                if self.current_object:
-                    self.current_object["browser_events"].extend(self.drain_browser_events())
+                if self.event:
+                    self.event["browser_events"].extend(self.collect_browser_events())
 
-                    self.current_object["event_end_time"] = (datetime.datetime.now().strftime(TIMESTAMP_FORMAT))
-                    self.current_object["recent_windows"] = tuple(
+                    self.event["event_end_time"] = (datetime.datetime.now().strftime(TIMESTAMP_FORMAT))
+                    self.event["recent_windows"] = tuple(
                         self.recent_windows
                     )
 
-                    recent_object = self.current_object.copy()
+                    recent_object = self.event.copy()
                     del recent_object["recent_windows"]
                     self.recent_windows.appendleft(recent_object)
 
-                    self.event_queue.put(self.current_object)
+                    self.event_queue.put(self.event)
 
-                self.current_object = {
+                self.event = {
                     "executable": executable,
                     "title": buffer.value,
                     "publisher": publisher_name,
@@ -182,12 +197,13 @@ if __name__=='__main__':
     HOST = os.getenv("WINDOWS_AGENT_SERVER_HOST")
 
     event_queue = Queue()
+    db = create_db_connection(QUEUE_DB_PATH)
+    repository = EventRepository(db)
     server = WindowsAgentServer(host=HOST, port=PORT)
-    listener = WindowsEventListener(event_queue, browser_event_queue=server.event_queue)
-    listener.start_listening()
+    listener = WindowsEventListener(event_queue, browser_event_queue=server.event_queue, queue_repository=repository)
 
     server.start()
-
+    listener.start_listening()
     
     pythoncom.PumpMessages()
     
