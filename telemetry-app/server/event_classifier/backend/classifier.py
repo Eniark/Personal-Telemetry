@@ -76,3 +76,6 @@ class Classification:
     class_: EventCategory
     classification_approved: bool = field(default=False, kw_only=True)
     confidence: float
+
+    def __repr__(self):
+        return f"<Classification: {self.class_=}, {self.classification_approved=}, {self.confidence=}>"

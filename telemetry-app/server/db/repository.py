@@ -31,7 +31,7 @@ class TelemetryRepository:
                 activity.class_.class_,
                 activity.class_.classified_at,
                 activity.class_.classified_by.value,
-                activity.class_.classification_approved,
+                bool(activity.class_.classification_approved), # sqlite does not recognize numpy's bool type
                 activity.class_.confidence,
             )
             for activity in events[EventType.OS]
@@ -48,7 +48,7 @@ class TelemetryRepository:
                 activity.class_.class_,
                 activity.class_.classified_at,
                 activity.class_.classified_by.value,
-                activity.class_.classification_approved,
+                bool(activity.class_.classification_approved),
                 activity.class_.confidence,
             )
             for activity in events[EventType.BROWSER]

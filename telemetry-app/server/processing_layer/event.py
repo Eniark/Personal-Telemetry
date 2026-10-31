@@ -70,7 +70,7 @@ class OperatingSystemEvent(Event):
         )
     
     def __repr__(self):
-        return f"<OS Activity: {self.process=}, {self.category=}>"
+        return f"<OS Activity: {self.process=}, {self.category=}, {self.class_}>"
     
 
 class PhoneMapper:
