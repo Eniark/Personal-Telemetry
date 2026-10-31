@@ -34,8 +34,8 @@ class WindowsEventListener:
         self.browser_event_queue = browser_event_queue
 
         # API-related properties
-        self.retry_delay = 60
-        self.max_retry_delay = 900
+        self.retry_delay = 5
+        self.max_retry_delay = 120
         self.next_retry_at = 0
         # =============
 
@@ -120,13 +120,13 @@ class WindowsEventListener:
                     for event in data:
                         event['sent_at'] = datetime.datetime.now().strftime(TIMESTAMP_FORMAT)
                     response = requests.post(f"http://{TELEMETRY_SERVER_HOST}:{TELEMETRY_SERVER_PORT}/os_event", json=data)
-                    print(response.text)
                     response.raise_for_status()
 
                     repository.upsert_events(events=data, are_acknowledged=True)
 
                     self.retry_delay = 60
                     self.next_retry_at = 0
+                    print(f'Sent a batch of events: {len(data)} events')
 
                 except requests.RequestException as e:
                     print(f"API is unavailable: {e}")
