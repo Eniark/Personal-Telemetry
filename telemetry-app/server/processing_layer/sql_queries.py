@@ -55,7 +55,15 @@ SELECT_OS_EVENTS_QUERY = """
 """
 
 SELECT_BROWSER_EVENTS_QUERY = """
-    SELECT id, url, title, event_start_time, event_end_time, ROUND(model_confidence, 3) AS model_confidence FROM browser_events
+    SELECT 
+        id,
+        url,
+        title,
+        event_start_time,
+        event_end_time,
+        ROUND(model_confidence, 3) AS model_confidence,
+        class
+    FROM browser_events
     WHERE os_event_id=?
 """
 

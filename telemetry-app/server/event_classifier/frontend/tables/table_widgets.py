@@ -63,8 +63,10 @@ class TelemetryTable(QTableWidget):
     
     def _populate_table(self, data):
         data = data[:self.max_rows]
+        # print(len(data), len(data[0]))
         self._preconfigure_table(n_rows=len(data))
         class_col_idx = self.get_column_idx('class')
+        # print('idx', class_col_idx)
         action_col_idx = self.get_column_idx('action')
         for row_idx, row in enumerate(data):
             action_button = QPushButton("Apply")
@@ -72,7 +74,7 @@ class TelemetryTable(QTableWidget):
             event_category_dropdown.addItems([category.value for category in EventCategory])
             event_category_dropdown.setCurrentText(row[class_col_idx])
             for col_idx, value in enumerate(row):
-                if col_idx!=class_col_idx:
+                if col_idx != class_col_idx:
                     value = str(value)
                     self.setItem(row_idx, col_idx, QTableWidgetItem(value))
             self.setCellWidget(row_idx, class_col_idx, event_category_dropdown)
@@ -122,9 +124,8 @@ class BrowserEventsTable(TelemetryTable):
     }
     def __init__(self, repository: TelemetryRepository):
         super().__init__(repository)
-        self.populate_table()
 
-    def populate_table(self, os_event_id: str|None = None) -> None:
+    def populate_table(self, os_event_id: str) -> None:
         events = self.repository.get_events(query=SELECT_BROWSER_EVENTS_QUERY, params=(os_event_id,), limit=None)
         self._populate_table(events)
 
@@ -148,7 +149,6 @@ class OsEventsTable(TelemetryTable):
         self.layout = layout
         self.populate_table()
     
-
     
     def show_events_table(self, item: QTableWidgetItem) -> None:
         row = item.row()
