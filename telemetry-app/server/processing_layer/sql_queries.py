@@ -63,6 +63,8 @@ UPDATE_EVENT_CLASS_QUERY = """
     UPDATE {table}
     SET class=?,
         classified_at=?,
-        classified_by=?
+        classified_by=?,
+        model_confidence=?,
+        classification_approved=true
     WHERE id=?
 """

@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from server.processing_layer.enums import EventCategory
 from server.event_classifier.backend.classifier import Classification
+from server.event_classifier.backend.enums import ClassificationRole
 from server.processing_layer.sql_queries import SELECT_OS_EVENTS_QUERY, SELECT_BROWSER_EVENTS_QUERY
 from server.db.repository import TelemetryRepository
 from shared.enums import EventType
@@ -91,9 +92,10 @@ class TelemetryTable(QTableWidget):
     
     def update_classification(self, row_id: str, dropdown: QComboBox) -> None:
         classification = Classification(
-            class_ = EventCategory(dropdown.currentText()),
+            class_ = dropdown.currentText(),
             classified_at = datetime.datetime.now(),
-            classified_by = 'user'
+            classified_by = ClassificationRole.USER,
+            confidence = 100
         )
 
         self.repository.update_classification(row_id=row_id, classification=classification, table=self.TABLE_NAME)

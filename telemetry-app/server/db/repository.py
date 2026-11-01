@@ -73,7 +73,8 @@ class TelemetryRepository:
         (
             classification.class_,
             classification.classified_at,
-            classification.classified_by,
+            classification.classified_by.value,
+            classification.confidence,
             row_id
         ))
         self.db.commit()
