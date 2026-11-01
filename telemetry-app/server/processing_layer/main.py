@@ -54,6 +54,7 @@ class EventProcessor:
         
         for browser_event in event.related_browser_events:
             browser_event = BrowserEvent.from_schema(browser_event)
+            browser_event.os_event_id = event.id
             
             logger.info(f"[API] Browser Event: {browser_event.title} - {browser_event.url}")
             self.handle_browser_event(browser_event)

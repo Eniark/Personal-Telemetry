@@ -63,10 +63,10 @@ class TelemetryTable(QTableWidget):
     
     def _populate_table(self, data):
         data = data[:self.max_rows]
-        # print(len(data), len(data[0]))
+
         self._preconfigure_table(n_rows=len(data))
+        
         class_col_idx = self.get_column_idx('class')
-        # print('idx', class_col_idx)
         action_col_idx = self.get_column_idx('action')
         for row_idx, row in enumerate(data):
             action_button = QPushButton("Apply")
