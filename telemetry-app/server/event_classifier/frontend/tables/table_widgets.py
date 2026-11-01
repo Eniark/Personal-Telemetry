@@ -63,15 +63,19 @@ class TelemetryTable(QTableWidget):
     def _populate_table(self, data):
         data = data[:self.max_rows]
         self._preconfigure_table(n_rows=len(data))
+        class_col_idx = self.get_column_idx('class')
+        action_col_idx = self.get_column_idx('action')
         for row_idx, row in enumerate(data):
             action_button = QPushButton("Apply")
             event_category_dropdown = QComboBox()
             event_category_dropdown.addItems([category.value for category in EventCategory])
+            event_category_dropdown.setCurrentText(row[class_col_idx])
             for col_idx, value in enumerate(row):
-                value = str(value)
-                self.setItem(row_idx, col_idx, QTableWidgetItem(value))
-            self.setCellWidget(row_idx, self.get_column_idx('class'), event_category_dropdown)
-            self.setCellWidget(row_idx, self.get_column_idx('action'), action_button)
+                if col_idx!=class_col_idx:
+                    value = str(value)
+                    self.setItem(row_idx, col_idx, QTableWidgetItem(value))
+            self.setCellWidget(row_idx, class_col_idx, event_category_dropdown)
+            self.setCellWidget(row_idx, action_col_idx, action_button)
             row_id = row[0]
             action_button.clicked.connect(lambda _, row_id=row_id, dropdown=event_category_dropdown: self.update_classification(row_id=row_id, dropdown=dropdown))
             action_button.clicked.connect(self._delete_record)

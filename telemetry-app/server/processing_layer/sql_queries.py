@@ -39,7 +39,17 @@ INSERT_OS_EVENTS_QUERY = """
 """
 
 SELECT_OS_EVENTS_QUERY = """
-    SELECT id, event_id, type, title, executable, event_start_time, event_end_time, ROUND(model_confidence, 3) AS model_confidence FROM os_events
+    SELECT 
+        id,
+        event_id,
+        type,
+        title,
+        executable,
+        event_start_time,
+        event_end_time,
+        ROUND(model_confidence, 3) AS model_confidence, 
+        class
+    FROM os_events
     WHERE classification_approved=false
     ORDER BY event_start_time DESC;
 """
