@@ -6,6 +6,8 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
     QVBoxLayout,
+    QTabWidget,
+    QWidget
 )
 
 from shared.utils import create_db_connection
@@ -25,23 +27,55 @@ def create_repository() -> TelemetryRepository:
 
 def create_panel(repository: TelemetryRepository, screen_size: int) -> TelemetryPanel:
 
+    panel = TelemetryPanel(screen_size=screen_size)
+    layout = QVBoxLayout(panel)
+
+    tabs = QTabWidget()
+
+    # TABLE TAB
+    # ==============================================
+    table_tab = QWidget()
+    table_layout = QVBoxLayout(table_tab)
+
+    button_layout = QHBoxLayout()
+
     refresh_button = QPushButton('Refresh')
     refresh_button.setFixedSize(100, 25)
 
     temp_quit_btn = QPushButton('Exit')
     temp_quit_btn.setFixedSize(100, 25)
 
-    panel = TelemetryPanel(screen_size=screen_size)
-    layout = QVBoxLayout(panel)
-    button_layout = QHBoxLayout()
-    browser_events_table = BrowserEventsTable(repository=repository)
-    os_events_table = OsEventsTable(repository=repository, browser_events_table=browser_events_table, layout=layout)
     button_layout.addWidget(refresh_button)
     button_layout.addWidget(temp_quit_btn)
     button_layout.addStretch()
 
-    layout.addLayout(button_layout)
-    layout.addWidget(os_events_table)
+    browser_events_table = BrowserEventsTable(repository=repository)
+
+    os_events_table = OsEventsTable(
+        repository=repository,
+        browser_events_table=browser_events_table,
+        layout=table_layout
+    )
+
+    table_layout.addLayout(button_layout)
+    table_layout.addWidget(os_events_table)
+    table_layout.addWidget(browser_events_table)
+    # ==============================================
+
+
+
+    # DASHBOARD TAB
+    # ==============================================
+    dashboard_tab = QWidget()
+    dashboard_layout = QVBoxLayout(dashboard_tab)
+    # ==============================================
+
+
+    tabs.addTab(table_tab, "Events")
+    tabs.addTab(dashboard_tab, "Dashboard")
+
+    layout.addWidget(tabs)
+
     refresh_button.clicked.connect(os_events_table.populate_table)
     temp_quit_btn.clicked.connect(QApplication.quit)
 

@@ -124,6 +124,7 @@ class BrowserEventsTable(TelemetryTable):
     }
     def __init__(self, repository: TelemetryRepository):
         super().__init__(repository)
+        self.populate_table(os_event_id=None)
 
     def populate_table(self, os_event_id: str) -> None:
         events = self.repository.get_events(query=SELECT_BROWSER_EVENTS_QUERY, params=(os_event_id,), limit=None)
@@ -156,10 +157,8 @@ class OsEventsTable(TelemetryTable):
         event_type =self.item(row, 2).text()
         if event_type == EventType.BROWSER.value:
             self.browser_events_table.populate_table(os_event_id=event_id)
-            self.layout.addWidget(self.browser_events_table)
         else:
-            self.browser_events_table.setParent(None)
-            self.parentWidget().adjustSize()
+            self.browser_events_table.setRowCount(0)
         
     def populate_table(self) -> None:
         events = self.repository.get_events(query=SELECT_OS_EVENTS_QUERY, limit=None)
