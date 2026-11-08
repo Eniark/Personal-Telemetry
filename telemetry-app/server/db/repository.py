@@ -62,7 +62,7 @@ class TelemetryRepository:
             logger.error(F"[DB] Failed to insert {len(events[EventType.OS])} OS events and {len(events[EventType.BROWSER])} Browser events into the database.")
             print(e)
 
-    def get_events(self, query: str, params: tuple = (), limit: int|None = None) -> tuple[list|None, list[Any]]:
+    def get_events(self, query: str, params: tuple = ()) -> tuple[list|None, list[Any]]:
         cursor = self.db.execute(query, params)
         data = cursor.fetchall()
         return data

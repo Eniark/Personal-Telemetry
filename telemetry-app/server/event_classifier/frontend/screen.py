@@ -51,10 +51,10 @@ def create_panel(repository: TelemetryRepository, screen_size: int) -> Telemetry
 
     browser_events_table = BrowserEventsTable(repository=repository)
 
-    os_events_table = OsEventsTable(
-        repository=repository,
-        browser_events_table=browser_events_table,
-        layout=table_layout
+    os_events_table = OsEventsTable(repository=repository)
+
+    os_events_table.os_event_selected.connect(
+        browser_events_table.populate_table
     )
 
     table_layout.addLayout(button_layout)

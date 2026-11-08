@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QVBoxLayout
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from server.processing_layer.enums import EventCategory
 from server.event_classifier.backend.classifier import Classification
 from server.event_classifier.backend.enums import ClassificationRole
@@ -126,11 +126,17 @@ class BrowserEventsTable(TelemetryTable):
         super().__init__(repository)
         self.populate_table(os_event_id=None)
 
-    def populate_table(self, os_event_id: str) -> None:
-        events = self.repository.get_events(query=SELECT_BROWSER_EVENTS_QUERY, params=(os_event_id,), limit=None)
+    def populate_table(self, os_event_id: str | None = None) -> None:
+
+        if os_event_id is None or os_event_id == "":
+            self.setRowCount(0)
+            return
+
+        events = self.repository.get_events(query=SELECT_BROWSER_EVENTS_QUERY, params=(os_event_id,))
         self._populate_table(events)
 
 class OsEventsTable(TelemetryTable):
+    os_event_selected = Signal(str)
     TABLE_NAME = 'os_events'
     COLUMN_CONFIGS = {
         "id": Column(title="id", width=75),
@@ -144,24 +150,24 @@ class OsEventsTable(TelemetryTable):
         "class": Column(title="Proposed Class", width=100, text_alignment="center"),
         "action": Column(title="Action", width=75, text_alignment="center"),
     }
-    def __init__(self, repository: TelemetryRepository, browser_events_table: BrowserEventsTable, layout: QVBoxLayout):
+    def __init__(self, repository: TelemetryRepository):
         super().__init__(repository)
-        self.browser_events_table = browser_events_table
-        self.layout = layout
         self.populate_table()
     
     
     def show_events_table(self, item: QTableWidgetItem) -> None:
         row = item.row()
+
         event_id = self.item(row, 1).text()
-        event_type =self.item(row, 2).text()
+        event_type = self.item(row, 2).text()
+
         if event_type == EventType.BROWSER.value:
-            self.browser_events_table.populate_table(os_event_id=event_id)
+            self.os_event_selected.emit(event_id)
         else:
-            self.browser_events_table.setRowCount(0)
+            self.os_event_selected.emit("")
         
     def populate_table(self) -> None:
-        events = self.repository.get_events(query=SELECT_OS_EVENTS_QUERY, limit=None)
+        events = self.repository.get_events(query=SELECT_OS_EVENTS_QUERY)
         self._populate_table(events)
         self.itemClicked.connect(self.show_events_table)
 
