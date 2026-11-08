@@ -24,7 +24,10 @@ with create_db_connection(DB_PATH) as conn:
             class TEXT,
             classified_at TEXT,
             classified_by TEXT,
-            classification_approved BOOL
+            classification_approved BOOL,
+            duration_seconds REAL GENERATED ALWAYS AS (
+                unixepoch(end_timestamp) - unixepoch(start_timestamp)
+            ) VIRTUAL
         )
         """)
 
@@ -43,6 +46,9 @@ with create_db_connection(DB_PATH) as conn:
             classified_at TEXT,
             classified_by TEXT,
             classification_approved BOOL,
+            duration_seconds REAL GENERATED ALWAYS AS (
+                unixepoch(end_timestamp) - unixepoch(start_timestamp)
+            ) VIRTUAL,
             FOREIGN KEY (os_event_id) REFERENCES os_event(event_id) 
         )
         """)
