@@ -18,6 +18,7 @@ Commit reviewed: `6bfce47` (2026-11-08). Paths are relative to `telemetry-app/` 
 | [agent-android.md](agent-android.md) | Android app |
 | [best-practices.md](best-practices.md) | Cross-cutting practices: what, how, when to apply |
 | [additional-comments.md](additional-comments.md) | Senior-level critique: architecture, data/ML, code quality, deps, security, process |
+| [roast.md](roast.md) | The same findings, with no mercy |
 
 Labels used in every file:
 
