@@ -1,12 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Minimal Tab Time Tracker",
+  "name": "Personal Telemetry",
   "version": "1.0",
 
   "permissions": [
     "tabs",
-    "storage",
-    "idle"
+    "storage"
   ],
 
   "background": {

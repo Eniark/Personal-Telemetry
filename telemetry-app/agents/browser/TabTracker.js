@@ -1,4 +1,5 @@
 import { Tab } from "./Tab.js"
+import { DEBUG, API_ADDRESS } from "./configs.js";
 
 export class TabTracker {
     constructor() {
@@ -7,10 +8,10 @@ export class TabTracker {
     }
 
     async saveCurrentSession(tab) {
-        if (!this.userTracked || !tab || Object.keys(tab).length === 0) return;
+        if (!this.userTracked || !tab) return;
  
         try {
-            const res = await fetch("http://127.0.0.1:8080/browser_event", {
+            const res = await fetch(`${API_ADDRESS}/browser_event`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -26,30 +27,30 @@ export class TabTracker {
 
             if (!res.ok) throw new Error("Save failed");
 
-            console.log("Saved:", tab.url);
+            if (DEBUG) console.log("Saved:", tab.url);
         
         } catch (err) {
-            console.error("Save failed", err);
+            if (DEBUG) console.error("Save failed", err);
         }
 
         
     }
 
-    async registerTab(tabId) {
-        
-        const tab = await chrome.tabs.get(tabId);
-
-        
-        if (tab) {
-            this.previousTab = {...this.currentTab}
+    async registerTab(tabId, save=true) {
+        try {
+            const tab = await chrome.tabs.get(tabId);
+            this.previousTab = this.currentTab
             this.currentTab = new Tab(tab.id, tab.url, tab.title, Date.now())
             this.userTracked = true;
         }
-        else {
+        catch {
             this.currentTab = null;
             this.userTracked = false;
         }
-        await this.saveCurrentSession(this.previousTab);
+        
+        if (save) {
+            await this.saveCurrentSession(this.previousTab);
+        }
 
     }
 }

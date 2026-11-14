@@ -1,21 +1,10 @@
 import { TabTracker } from "./TabTracker.js"
-
+import { BROWSER_FOCUS_POOLING_MS, DEBUG } from "./configs.js";
 const tabTracker = new TabTracker()
 
-setInterval(checkBrowserFocus, 4000); // detects when browser gets unfocused
+setInterval(checkBrowserFocus, BROWSER_FOCUS_POOLING_MS); // detects when browser gets unfocused
 
 chrome.runtime.onStartup.addListener(async () => {
-    const tabs = await chrome.tabs.query({
-        active: true,
-        currentWindow: true
-    });
-
-    if (tabs.length) {
-        tabTracker.registerTab(tabs[0].id);
-    }
-});
-
-chrome.runtime.onInstalled.addListener(async () => {
     const tabs = await chrome.tabs.query({
         active: true,
         currentWindow: true
@@ -30,7 +19,7 @@ chrome.runtime.onInstalled.addListener(async () => {
 // TAB SWITCH
 //
 chrome.tabs.onActivated.addListener((activeInfo) => {
-    console.log("onActivated")
+    if (DEBUG) console.log("onActivated");
 
     tabTracker.registerTab(activeInfo.tabId);
     
@@ -39,19 +28,18 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 //
 // URL CHANGE IN SAME TAB
 //
-chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
 
     if (changeInfo.status !== "complete") return;
 
-    chrome.tabs.query({
+    const tabs = await chrome.tabs.query({
         active: true,
         currentWindow: true
-    }, (tabs) => {
-
-        if (tabs[0]?.id === tabId) {
-            tabTracker.registerTab(tabId);
-        }
-    });
+    })
+    
+    if (tabs[0]?.id === tabId) {
+        tabTracker.registerTab(tabId);
+    }
 });
 
 //
@@ -61,15 +49,18 @@ chrome.windows.onFocusChanged.addListener(async (windowId) => {
     if (windowId === -1) {
         return
     }
-    console.log(`onFocusChanged: Focus is back.`)
+    if (DEBUG) console.log(`onFocusChanged: Focus is back.`);
+    tabTracker.registerTab(tabTracker.currentTab.id, false);
     tabTracker.userTracked = true
 });
 
 async function checkBrowserFocus(){
     let browser = await chrome.windows.getCurrent()
+    if (DEBUG) console.log('Pooling...');
     if (!browser.focused && tabTracker.userTracked) {
-        console.log("Browser lost focus.")
+        if (DEBUG) console.log("Browser lost focus.");
+        tabTracker.saveCurrentSession(tabTracker.currentTab)
         tabTracker.userTracked = false
-        tabTracker.currentTab = null;
+      
     }
 }
