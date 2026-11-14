@@ -22,6 +22,7 @@ def create_os_events_table(cursor):
             classified_at TEXT,
             classified_by TEXT,
             classification_approved BOOL,
+            model_confidence REAL,
             duration_seconds REAL GENERATED ALWAYS AS (
                 unixepoch(end_timestamp) - unixepoch(start_timestamp)
             ) VIRTUAL
@@ -44,6 +45,7 @@ def create_browser_events_table(cursor):
             classified_at TEXT,
             classified_by TEXT,
             classification_approved BOOL,
+            model_confidence REAL,
             duration_seconds REAL GENERATED ALWAYS AS (
                 unixepoch(end_timestamp) - unixepoch(start_timestamp)
             ) VIRTUAL,
