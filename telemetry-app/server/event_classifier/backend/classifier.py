@@ -36,7 +36,7 @@ class HardCodedClassifier(Classifier):
         "Code.exe": EventCategory.STUDYING,
     }
     def _classify(self, event: "EnrichedEvent" = None) -> tuple[float, EventCategory] | None: # This currently works only with OS events
-        class_ = HardCodedClassifier.activity_map.get(event.process)
+        class_ = HardCodedClassifier.activity_map.get(event.process).value
         if class_:
             return (100, class_)
         else:
