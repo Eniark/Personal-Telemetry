@@ -5,7 +5,7 @@ import os
 from shared.configs import DB_PATH
 from shared.utils import create_db_connection
 from server.processing_layer.event import PhoneMapper
-from server.processing_layer.main import EventProcessor, TelemetryRepository, OperatingSystemEvent
+from server.processing_layer.processor import EventProcessor, TelemetryRepository, OperatingSystemEvent
 from shared.configs import LISTEN_TO_ALL_DEVICES
 from server.api.models import PhoneEventSchema, OSEventSchema
 from server.event_classifier.backend.classifier import HardCodedClassifier, MLClassifier, LLMClassifier
