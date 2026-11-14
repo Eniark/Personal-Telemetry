@@ -4,9 +4,9 @@ from pydantic import BaseModel
 class PhoneEventSchema(BaseModel):
     id: int
     packageName: str
-    appName: str
-    description: str
-    developer: str
+    appName: str | None
+    description: str | None
+    developer: str | None
     eventStartTime: int
     eventEndTime: int
     sentToApi: bool
