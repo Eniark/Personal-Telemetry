@@ -1,5 +1,5 @@
 import { TabTracker } from "./TabTracker.js"
-import { BROWSER_FOCUS_POOLING_MS, DEBUG } from "./configs.js";
+import { BROWSER_FOCUS_POOLING_MS, DEBUG } from "./config.js";
 const tabTracker = new TabTracker()
 
 setInterval(checkBrowserFocus, BROWSER_FOCUS_POOLING_MS); // detects when browser gets unfocused

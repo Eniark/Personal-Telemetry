@@ -1,5 +1,5 @@
 import { Tab } from "./Tab.js"
-import { DEBUG, API_ADDRESS } from "./configs.js";
+import { DEBUG, API_ADDRESS } from "./config.js";
 
 export class TabTracker {
     constructor() {
