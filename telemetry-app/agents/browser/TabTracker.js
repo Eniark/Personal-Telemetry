@@ -39,8 +39,8 @@ export class TabTracker {
     async registerTab(tabId, save=true) {
         try {
             const tab = await chrome.tabs.get(tabId);
-            this.previousTab = this.currentTab
-            this.currentTab = new Tab(tab.id, tab.url, tab.title, Date.now())
+            this.previousTab = this.currentTab;
+            this.currentTab = new Tab(tab.id, tab.url, tab.title, Date.now());
             this.userTracked = true;
         }
         catch {
