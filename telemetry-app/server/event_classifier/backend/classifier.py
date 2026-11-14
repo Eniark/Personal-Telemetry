@@ -23,6 +23,7 @@ class Classifier(ABC):
             return confidence, predicted_class
         except:
             logger.error(f'[{self.__class__.__name__}] An error occured while classifying event.')
+            return None, None
             
     @abstractmethod
     def _classify(self, event: "EnrichedEvent") -> tuple[float, EventCategory]:
